@@ -6,7 +6,7 @@
   "author": "tiye <jiyinyiyong@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "watch-mbt": "moon build --target wasm-gc --debug --watch"
+    "watch-mbt": "moon build --target js --debug --watch"
   },
   "devDependencies": {
     "vite": "^6.2.2"

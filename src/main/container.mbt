@@ -1,0 +1,113 @@
+///|
+typealias @respo.RespoStatesTree
+
+///|
+fnalias @markdown.comp_md_block
+
+///|
+fnalias @respo_node.(
+  input,
+  space,
+  textarea,
+  a,
+  // text_node,
+  img
+)
+
+///|
+fnalias @respo.(ui_row_middle, ui_row, ui_expand)
+
+///|
+struct ContainerState {
+  draft : String
+  text : String
+} derive(ToJson, @json.FromJson, Default)
+
+///|
+fn comp_container[Op : @respo_node.RespoAction](
+  states : RespoStatesTree
+) -> @respo_node.RespoNode[Op] {
+  let cursor = states.cursor
+  let state = (states.cast_branch() : ContainerState)
+  div(
+    class_name=ui_global,
+    style=respo_style(
+      width=96 |> Percent,
+      margin="0 auto" |> Custom,
+      padding=8 |> Px,
+    ),
+    [
+      div(class_name=ui_row_middle, [
+        img(
+          src="https://cos-sh.tiye.me/cos-up/bb4c2755050318e864b56f59145d726e-SubstractRespo.png",
+          width=40,
+          alt="Respo",
+        ),
+        space(height=8),
+        a(
+          href="https://github.com/Respo/respo-markdown.calcit",
+          inner_text="respo-markdown",
+        ),
+      ]),
+      div([
+        comp_md_block(
+          "|Respo Markdown component renders Markdown text to virtual DOM in Respo. Require the code with\n\n```cirru\n:require\n  respo-md.comp.md :refer $ comp-md comp-md-block\n\ncomp-md \"|content\"\n\ncomp-md-block \"|content\\nnew line\" $ {}\n```\n",
+          {},
+        ),
+      ]),
+      space(height=40),
+      div([
+        div([comp_md("This is an example for using `comp-md`:", {})]),
+        div([
+          input(
+            class_name="input",
+            style=respo_style(width=100 |> Percent),
+            value=state.text,
+            placeholder="text inline",
+            event={}..set(Input, fn(e, dispatch) {
+              if e is Input(value~, ..) {
+                let ret = dispatch.set_state?(cursor, ContainerState::{
+                  ..state,
+                  text: value,
+                })
+
+              }
+            }),
+          ),
+          comp_md(state.text),
+        ]),
+      ]),
+      space(height=40),
+      div([
+        div(class_name="example", [
+          comp_md_block("Example For using `comp-md-block`:", {}),
+        ]),
+        div(class_name=ui_row, [
+          div(class_name=ui_expand, [
+            textarea(
+              placeholder="multi-line content",
+              value=state.draft,
+              class_list=["textarea", "font-code!"],
+              style=respo_style(
+                height=100 |> Percent,
+                width=100 |> Percent,
+                font_size=13,
+              ),
+              event={}..set(Input, fn(e, dispatch) {
+                if e is Input(value~, ..) {
+                  let ret = dispatch.set_state?(cursor, ContainerState::{
+                    ..state,
+                    draft: value,
+                  })
+
+                }
+              }),
+            ),
+          ]),
+          div(class_name=ui_expand, [comp_md_block(state.draft, { highlight, })]),
+        ]),
+      ]),
+      space(height=200),
+    ],
+  )
+}

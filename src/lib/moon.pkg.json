@@ -1,7 +1,6 @@
 {
   "is-main": true,
   "import": [
-    { "path": "tiye/respo-markdown/lib", "alias": "markdown" },
     {
       "path": "tiye/respo/lib",
       "alias": "respo"

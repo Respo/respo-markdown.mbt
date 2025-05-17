@@ -1,8 +1,8 @@
 ///|
-fnalias @respo.(ui_global, ui_button)
+fnalias @respo.ui_global
 
 ///|
-fnalias @respo_node.(div, span, button, respo_style)
+fnalias @respo_node.(div, respo_style)
 
 ///|
 let app_store_key : String = "mbt-workflow"
@@ -15,10 +15,8 @@ fn view(
     raise @respo_node.RespoCommonError("TODO")
   }
   // @dom_ffi.log("Store to render: " + store.to_json().stringify(indent=2))
-  let states = store.get_states()
-  div(class_name=ui_global, style=respo_style(padding=Px(12)), [
-    comp_counter(states.pick("counter"), store.counted),
-  ])
+  let _states = store.get_states()
+  div(class_name=ui_global, style=respo_style(padding=Px(12)), [])
 }
 
 ///|
