@@ -4,7 +4,7 @@ extern type JsRegex
 ///| extract basic information from a regex match result
 struct MatchResult {
   matched : String
-  start : UInt
+  // start : UInt
   selects : Array[String]
 }
 
@@ -53,7 +53,7 @@ fn match_string_pattern(input : String, reg : JsRegex) -> MatchResult? {
     None
   } else {
     let matched = JsValue::get_index(ret, 0)
-    let start = JsValue::get_prop(matched, "index")
+    // let start = JsValue::get_prop(matched, "index")
     let selects : Array[String] = Array::new()
     let len = JsValue::get_length(ret).reinterpret_as_int() - 1
     for i = 0; i < len; i = i + 1 {
@@ -62,7 +62,7 @@ fn match_string_pattern(input : String, reg : JsRegex) -> MatchResult? {
     }
     Some(MatchResult::{
       matched: matched.reinterpret_as_string(),
-      start: start.reinterpret_as_int().reinterpret_as_uint(),
+      // start: start.reinterpret_as_int().reinterpret_as_uint(),
       selects,
     })
   }

@@ -1,13 +1,12 @@
 ///|
 struct Store {
-  mut counted : Int
   tasks : Array[Task]
   states : @respo.RespoStatesTree
 } derive(ToJson, @json.FromJson)
 
 ///|
 impl Default for Store with default() -> Store {
-  { counted: 0, tasks: [], states: @respo.RespoStatesTree::default() }
+  { tasks: [], states: @respo.RespoStatesTree::default() }
 }
 
 ///|
@@ -22,9 +21,6 @@ struct Task {
 enum ActionOp {
   Noop
   StatesChange(@respo.RespoUpdateState)
-  Increment
-  Decrement
-  IncTwice
 }
 
 ///|
@@ -34,7 +30,7 @@ impl Default for ActionOp with default() -> ActionOp {
 
 ///|
 impl @respo_node.RespoAction for ActionOp with build_states_action(cursor, a) {
-  ActionOp::StatesChange({ cursor, data: Some(a.to_json()) })
+  StatesChange({ cursor, data: a.map(fn(x) { x.to_json() }) })
 }
 
 ///|
@@ -44,9 +40,7 @@ impl Show for ActionOp with output(self, logger) -> Unit {
     StatesChange(states) =>
       "StatesChange(\{states.cursor}  \{states.data.to_json()})"
     // Intent(_intent) => "Intent(...)"
-    Increment => "Increment"
-    Decrement => "Decrement"
-    IncTwice => "IncTwice"
+
   }
   logger.write_string(s)
 }
@@ -59,9 +53,7 @@ fn get_states(self : Store) -> @respo.RespoStatesTree {
 ///| TODO mutation might break memoization infuture
 fn update(self : Store, op : ActionOp) -> Unit {
   match op {
-    Increment => self.counted += 1
     StatesChange(states) => self.states.set_in_mut(states)
-    Decrement => self.counted -= 1
     _ => ()
   }
 }

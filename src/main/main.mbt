@@ -16,7 +16,9 @@ fn view(
   }
   // @dom_ffi.log("Store to render: " + store.to_json().stringify(indent=2))
   let _states = store.get_states()
-  div(class_name=ui_global, style=respo_style(padding=Px(12)), [])
+  div(class_name=ui_global, style=respo_style(padding=Px(12)), [
+    comp_container(store.states),
+  ])
 }
 
 ///|

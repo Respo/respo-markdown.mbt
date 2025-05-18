@@ -2,7 +2,7 @@
 typealias @respo.RespoStatesTree
 
 ///|
-fnalias @markdown.comp_md_block
+fnalias @markdown.(comp_md_block, comp_md)
 
 ///|
 fnalias @respo_node.(
@@ -52,12 +52,11 @@ fn comp_container[Op : @respo_node.RespoAction](
       div([
         comp_md_block(
           "|Respo Markdown component renders Markdown text to virtual DOM in Respo. Require the code with\n\n```cirru\n:require\n  respo-md.comp.md :refer $ comp-md comp-md-block\n\ncomp-md \"|content\"\n\ncomp-md-block \"|content\\nnew line\" $ {}\n```\n",
-          {},
         ),
       ]),
       space(height=40),
       div([
-        div([comp_md("This is an example for using `comp-md`:", {})]),
+        div([comp_md("This is an example for using `comp-md`:")]),
         div([
           input(
             class_name="input",
@@ -66,11 +65,10 @@ fn comp_container[Op : @respo_node.RespoAction](
             placeholder="text inline",
             event={}..set(Input, fn(e, dispatch) {
               if e is Input(value~, ..) {
-                let ret = dispatch.set_state?(cursor, ContainerState::{
+                dispatch.set_state!(cursor, ContainerState::{
                   ..state,
                   text: value,
                 })
-
               }
             }),
           ),
@@ -80,7 +78,7 @@ fn comp_container[Op : @respo_node.RespoAction](
       space(height=40),
       div([
         div(class_name="example", [
-          comp_md_block("Example For using `comp-md-block`:", {}),
+          comp_md_block("Example For using `comp-md-block`:"),
         ]),
         div(class_name=ui_row, [
           div(class_name=ui_expand, [
@@ -95,16 +93,15 @@ fn comp_container[Op : @respo_node.RespoAction](
               ),
               event={}..set(Input, fn(e, dispatch) {
                 if e is Input(value~, ..) {
-                  let ret = dispatch.set_state?(cursor, ContainerState::{
+                  dispatch.set_state!(cursor, ContainerState::{
                     ..state,
                     draft: value,
                   })
-
                 }
               }),
             ),
           ]),
-          div(class_name=ui_expand, [comp_md_block(state.draft, { highlight, })]),
+          div(class_name=ui_expand, [comp_md_block(state.draft)]),
         ]),
       ]),
       space(height=200),

@@ -1,5 +1,4 @@
 {
-  "is-main": true,
   "import": [
     {
       "path": "tiye/respo/lib",
@@ -9,6 +8,9 @@
       "path": "tiye/respo/lib/node",
       "alias": "respo_node"
     },
-    { "path": "tiye/dom-ffi/lib", "alias": "dom_ffi" }
+    {
+      "path": "tiye/dom-ffi/lib",
+      "alias": "dom_ffi"
+    }
   ]
 }

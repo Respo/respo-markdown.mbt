@@ -35,12 +35,16 @@ enum Block {
   Empty
   Text(@immut/array.T[String])
   Code(@immut/array.T[String])
-  Table(@immut/array.T[String])
-}
+  Table(@immut/array.T[Array[String]])
+} derive(Show, Eq)
 
 ///|
 fn split_block(text : String) -> Array[Block] {
-  split_block_iter(split_lines(text), [], [], "empty")
+  split_block_iter(
+    text.split("\n").map(fn(x) -> String { x.to_string() }).to_array(),
+    [],
+    Empty,
+  )
 }
 
 // defn split-block-iter (lines acc buffer mode)
@@ -125,7 +129,11 @@ fn split_block_iter(
           ),
         )
       } else if is_table_line(cursor) {
-        split_block_iter(left, acc, Block::Table(split_table_content(cursor)))
+        split_block_iter(
+          left,
+          acc,
+          Block::Table(@immut/array.from_array([split_table_content(cursor)])),
+        )
       } else {
         split_block_iter(
           left,
@@ -139,7 +147,11 @@ fn split_block_iter(
       } else if cursor.has_prefix("|```") {
         split_block_iter(left, acc, Block::Code(buffer))
       } else if is_table_line(cursor) {
-        split_block_iter(left, acc, Block::Table(split_table_content(cursor)))
+        split_block_iter(
+          left,
+          acc,
+          Block::Table(@immut/array.from_array([split_table_content(cursor)])),
+        )
       } else {
         split_block_iter(left, acc, Block::Text(buffer.push(cursor)))
       }
@@ -174,8 +186,7 @@ enum LineChunk {
   Image(String)
   Emphasis(String)
   Italic(String)
-  Unknown(String)
-}
+} derive(Show, Eq)
 
 ///|
 fn LineChunk::is_empty(self : LineChunk) -> Bool {
@@ -187,14 +198,13 @@ fn LineChunk::is_empty(self : LineChunk) -> Bool {
     Image("") => true
     Emphasis("") => true
     Italic("") => true
-    Unknown("") => true
     _ => false
   }
 }
 
 ///|
 fn split_line(line : String) -> Array[LineChunk] {
-  split_line_iter([], line, "", Text)
+  split_line_iter([], line, Text(""))
 }
 
 // defn split-line-iter (acc line buffer mode)
@@ -284,7 +294,7 @@ fn split_line_iter(
   line : String,
   mode : LineChunk
 ) -> Array[LineChunk] {
-  if line == "|" {
+  if line == "" {
     if mode.is_empty() {
       return acc
     } else {
@@ -294,6 +304,7 @@ fn split_line_iter(
   }
   let cursor = line[0]
   let left = line.substring(start=1).to_string()
+  // println("cursor: \{cursor} .. mode: \{mode} .. line: \{line}")
   match mode {
     Text(buffer) =>
       match cursor {
@@ -357,7 +368,7 @@ fn split_line_iter(
               split_line_iter(acc, left, Text(buffer + "*"))
             }
           }
-        _ => split_line_iter(acc, left, Text(buffer + "*"))
+        _ => split_line_iter(acc, left, Text(buffer + cursor.to_string()))
       }
     Code(buffer) =>
       if cursor == '`' {
@@ -366,6 +377,7 @@ fn split_line_iter(
       } else {
         split_line_iter(acc, left, Code(buffer + cursor.to_string()))
       }
+    _ => panic() // unknown
   }
 }
 
@@ -375,8 +387,13 @@ fn split_line_iter(
 //     .split "\"|"
 //     .map $ fn (x) (.trim x)
 
+///|
 fn split_table_content(cursor : String) -> Array[String] {
-  cursor.substring(start=1, end=cursor.len() - 1).split("|").map(|x| x.trim()).to_array()
+  cursor
+  .substring(start=1, end=cursor.length() - 1)
+  .split("|")
+  .map(fn(x) { x.trim(" ").to_string() })
+  .to_array()
 }
 
 // defn table-line? (cursor)

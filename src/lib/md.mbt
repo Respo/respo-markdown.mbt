@@ -15,13 +15,16 @@ fnalias @respo_node.(
   h2,
   h3,
   h4,
-  h5,
-  h6,
-  li
+  pre,
+  li,
+  text_node
 )
 
 ///|
-struct MarkdownBlockOptions {
+fnalias @respo.code_fonts
+
+///|
+pub(all) struct MarkdownBlockOptions {
   class_name : String?
   style : @respo_node.RespoStyle?
   highlighter : ((String, String) -> String)?
@@ -40,21 +43,36 @@ struct MarkdownBlockOptions {
 ///|
 fn comp_code_block[T](
   lines : Array[String],
-  options : MarkdownBlockOptions
+  highlighter~ : (String, String) -> String = fn(x, _) -> String { x }
 ) -> @respo_node.RespoNode[T] {
   let lang = lines[0]
   let content = lines[1:].to_array().join("\n")
-  let highlight_fn = options.highlighter.or(fn(x, _) -> String { x })
-  if lang == "cirru" {
-    return comp_cirru_snippet(content, class_name=style_code_block)
-  }
   return comp_snippet(
     content,
     class_name=style_code_block,
-    highliter=highlight_fn,
+    highliter=highlighter,
     lang~,
   )
 }
+
+///|
+fn comp_snippet[T](
+  content : String,
+  class_name? : String,
+  highliter? : (String, String) -> String,
+  lang? : String
+) -> @respo_node.RespoNode[T] {
+  let highliter = highliter.or(fn(content, _) -> String { content })
+  let highlighted = highliter(content, lang.or("text"))
+  return div(class_list=[style_snippet, class_name.or("")], [
+    pre(class_name=style_code_block, children=[code(inner_text=highlighted)]),
+  ])
+}
+
+///|
+let style_snippet : String = declare_static_style([
+  ("&", respo_style(font_family=code_fonts)),
+])
 
 // defn comp-image (chunk)
 //   let
@@ -66,11 +84,14 @@ fn comp_code_block[T](
 ///|
 fn comp_image[T](chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.substring(start=2, end=chunk.length() - 1)
-  let [content, url] = useful
-    .split("|](")
-    .map(@string.View::to_string)
-    .collect()
-  return img(class_name=style_image, src=url, alt=content)
+  let xs = useful.split("|](").map(@string.View::to_string).collect()
+  if xs is [content, url, ..] {
+    img(class_name=style_image, src=url, alt=content)
+  } else {
+    return div(class_name=style_image, [
+      span(inner_text="Image not found", class_name=style_image, []),
+    ])
+  }
 }
 
 // defcomp comp-line (line)
@@ -161,24 +182,26 @@ fn comp_line[T](line : String) -> @respo_node.RespoNode[T] {
 ///|
 fn comp_link[T](chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.substring(start=1, end=chunk.length() - 1)
-  let [content, url] = useful
-    .split("|](")
-    .map(@string.View::to_string)
-    .collect()
-  return span(class_name=style_default_link, [
-    if content.has_prefix("`") && content.has_suffix("`") {
-      a(class_name=style_default_link, href=url, target=Blank, children=[
-        code(inner_text=content.substring(start=1, end=content.length() - 1)),
-      ])
-    } else {
-      a(
-        class_name=style_default_link,
-        href=url,
-        target=Blank,
-        inner_text="🌐 \{content}",
-      )
-    },
-  ])
+  let xs = useful.split("|](").map(@string.View::to_string).collect()
+  if xs is [content, url] {
+    span(class_name=style_default_link, [
+      if content.has_prefix("`") && content.has_suffix("`") {
+        a(class_name=style_default_link, href=url, target=Blank, children=[
+          code(inner_text=content.substring(start=1, end=content.length() - 1)),
+        ])
+      } else {
+        a(
+          class_name=style_default_link,
+          href=url,
+          target=Blank,
+          inner_text="🌐 \{content}",
+        )
+      },
+    ])
+  } else {
+    @dom_ffi.log("Error in comp-link: " + chunk)
+    panic()
+  }
 }
 
 // defcomp comp-md (text ? options)
@@ -187,8 +210,11 @@ fn comp_link[T](chunk : String) -> @respo_node.RespoNode[T] {
 //     , & $ memof1-call render-inline text
 
 ///|
-fn comp_md[T](text : String, class_name? : String) -> @respo_node.RespoNode[T] {
-  div(class_name=class_name.or(""), [render_inline(text)])
+pub fn comp_md[T](
+  text : String,
+  class_name? : String
+) -> @respo_node.RespoNode[T] {
+  div(class_name=class_name.or(""), render_inline(text))
 }
 
 // defcomp comp-md-block (text ? options)
@@ -208,23 +234,24 @@ fn comp_md[T](text : String, class_name? : String) -> @respo_node.RespoNode[T] {
 //             (:table lines) (comp-table-block lines)
 
 ///|
-fn comp_md_block[T](
+pub fn comp_md_block[T](
   text : String,
-  options : MarkdownBlockOptions
+  class_name? : String,
+  style? : @respo_node.RespoStyle,
+  highlighter~ : (String, String) -> String = fn(x, _) -> String { x }
 ) -> @respo_node.RespoNode[T] {
   let blocks = split_block(text)
-  let class_name = options.class_name
   return div(
     class_list=[class_name.or(""), "md-block"],
-    style=options.style.or(respo_style()),
+    style=style.or(respo_style()),
     blocks
     .iter()
     .map(fn(block) {
       match block {
-        Text(lines) => comp_text_block(lines)
-        Code(lines) => comp_code_block(lines, options)
-        Table(lines) => comp_table_block(lines)
-        _ => div([block])
+        Text(lines) => comp_text_block(lines.to_array())
+        Code(lines) => comp_code_block(lines.to_array(), highlighter~)
+        Table(lines) => comp_table_block(lines.to_array())
+        _ => div([block.to_string() |> text_node])
       }
     })
     .collect(),
@@ -254,15 +281,19 @@ fn comp_md_block[T](
 //               create-element :td ({}) & $ render-inline x
 
 ///|
-fn comp_table_block[T](lines : Array[String]) -> @respo_node.RespoNode[T] {
+fn comp_table_block[T](
+  lines : Array[Array[String]]
+) -> @respo_node.RespoNode[T] {
   let header_line = lines[0]
   let mark_line = lines[1]
-  let body_lines = if mark_line.has_prefix(":") || mark_line.has_suffix("-") {
+  let body_lines = if mark_line[0].has_prefix(":") ||
+    mark_line[0].has_suffix("-") {
     lines[2:]
   } else {
     lines[1:]
   }
   let attrs = {}
+  attrs.set("class-name", style_md_table)
   create_element("table", attrs~, event={}, style=respo_style(), [
     create_element("thead", attrs={}, event={}, style=respo_style(), [
       create_element(
@@ -275,7 +306,7 @@ fn comp_table_block[T](lines : Array[String]) -> @respo_node.RespoNode[T] {
             attrs={},
             event={},
             style=respo_style(),
-            render_inline(x),
+            render_inline(x.to_string()),
           )
         })
         .collect(),
@@ -293,7 +324,7 @@ fn comp_table_block[T](lines : Array[String]) -> @respo_node.RespoNode[T] {
           "tr",
           line
           .iter()
-          .map(fn(x) { create_element("td", render_inline(x)) })
+          .map(fn(x) { create_element("td", render_inline(x.to_string())) })
           .collect(),
         )
       })
@@ -348,7 +379,6 @@ fn render_inline[T](text : String) -> Array[@respo_node.RespoNode[T]] {
       Text(content) => els.push(div([span(inner_text=content, [])]))
       Emphasis(content) => els.push(b(render_inline(content)))
       Italic(content) => els.push(i(inner_text=content, []))
-      _ => els.push(div([span(inner_text="Unknown: \{chunk}", [])]))
     }
   }
   els
