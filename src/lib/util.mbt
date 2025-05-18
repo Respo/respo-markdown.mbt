@@ -6,30 +6,36 @@
 // def peek-emphasis $ new js/RegExp "\"^(.+)\\*\\*"
 
 ///|
-let peek_emphasis = JsRegex::js_regex_create("^(.*)\\*\\*", "")
+let peek_emphasis : JsRegex = JsRegex::js_regex_create("^(.*)\\*\\*", "")
 
 // def peek-image $ new js/RegExp "\"^\\!\\[[^\\]]*\\]\\([^\\)]+\\)" "\"g"
 
 ///|
-let peek_image = JsRegex::js_regex_create("^\\!\\[[^\\]]*\\]\\([^\\)]+\\)", "g")
+let peek_image : JsRegex = JsRegex::js_regex_create(
+  "^\\!\\[[^\\]]*\\]\\([^\\)]+\\)", "g",
+)
 
 // def peek-italic $ new js/RegExp "\"^([^*/]+)\\*"
 
 ///|
-let peek_italic = JsRegex::js_regex_create("^([^*/]+)\\*", "")
+let peek_itali : JsRegex = JsRegex::js_regex_create("^([^*/]+)\\*", "")
 
 // def peek-link $ new js/RegExp "\"^\\[[^\\]]+\\]\\([^\\)]+\\)"
 
 ///|
-let peek_link = JsRegex::js_regex_create("^\\[[^\\]]+\\]\\([^\\)]+\\)", "")
+let peek_link : JsRegex = JsRegex::js_regex_create(
+  "^\\[[^\\]]+\\]\\([^\\)]+\\)", "",
+)
 
 // defn split-block (text)
 //   split-block-iter (split-lines text) ([]) ([]) :empty
 
 ///|
-struct Block {
-  mode : String // TODO
-  content : Array[String] // TODO
+enum Block {
+  Empty
+  Text(Array[String])
+  Code(Array[String])
+  Table(Array[String])
 }
 
 ///|
@@ -94,14 +100,19 @@ fn split_block(text : String) -> Array[Block] {
 //   split-line-iter ([]) line | :text
 
 ///|
-enum LineMode {
-  Text
-  Code
-  Table
+enum LineChunk {
+  Text(String)
+  Code(String)
+  Url(String)
+  Link(String)
+  Image(String)
+  Emphasis(String)
+  Italic(String)
+  Unknown(String)
 }
 
 ///|
-fn split_line(line : String) -> Array[Block] {
+fn split_line(line : String) -> Array[LineChunk] {
   split_line_iter([], line, "", Text)
 }
 
@@ -191,6 +202,10 @@ fn split_line(line : String) -> Array[Block] {
 //     .slice 1 $ dec (count cursor)
 //     .split "\"|"
 //     .map $ fn (x) (.trim x)
+
+fn split_table_content(cursor : String) -> Array[String] {
+  cursor.substring(start=1, end=cursor.len() - 1).split("|").map(|x| x.trim()).to_array()
+}
 
 // defn table-line? (cursor)
 //   and (starts-with? cursor "\"|") (ends-with? cursor "\"|")
