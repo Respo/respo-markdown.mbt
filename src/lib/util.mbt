@@ -1,10 +1,3 @@
-// defn get0 (xs)
-//   if (nil? xs) nil $ .-0 xs
-// defn get1 (xs)
-//   if (nil? xs) nil $ .-1 xs
-
-// def peek-emphasis $ new js/RegExp "\"^(.+)\\*\\*"
-
 ///|
 let peek_emphasis : JsRegex = JsRegex::js_regex_create("^([^\\*]*)\\*\\*", "")
 
@@ -15,20 +8,13 @@ let peek_image : JsRegex = JsRegex::js_regex_create(
   "^\\!\\[[^\\]]*\\]\\([^\\)]+\\)", "g",
 )
 
-// def peek-italic $ new js/RegExp "\"^([^*/]+)\\*"
-
 ///|
-let peek_itali : JsRegex = JsRegex::js_regex_create("^([^*/]+)\\*", "")
-
-// def peek-link $ new js/RegExp "\"^\\[[^\\]]+\\]\\([^\\)]+\\)"
+let peek_italic : JsRegex = JsRegex::js_regex_create("^([^*/]+)\\*", "")
 
 ///|
 let peek_link : JsRegex = JsRegex::js_regex_create(
   "^\\[[^\\]]+\\]\\([^\\)]+\\)", "",
 )
-
-// defn split-block (text)
-//   split-block-iter (split-lines text) ([]) ([]) :empty
 
 ///|
 priv enum Block {
@@ -47,59 +33,6 @@ fn split_block(text : String) -> Array[Block] {
   )
 }
 
-// defn split-block-iter (lines acc buffer mode)
-//   if (empty? lines)
-//     if (empty? buffer) acc $ conj acc (:: mode buffer)
-//     let
-//         cursor $ first lines
-//         left $ rest lines
-//       case-default mode
-//         raise $ str "|Strange splitting mode: " mode
-//         :empty $ cond
-//             = cursor |
-//             recur left acc ([]) :empty
-//           (starts-with? cursor "|```")
-//             recur left acc
-//               [] $ &str:slice cursor 3
-//               , :code
-//           (table-line? cursor)
-//             recur left
-//               conj acc $ :: :text buffer
-//               [] $ split-table-content cursor
-//               , :table
-//           true $ recur left acc ([] cursor) :text
-//         :text $ cond
-//             = cursor |
-//             recur left
-//               conj acc $ :: :text buffer
-//               []
-//               , :empty
-//           (starts-with? cursor "|```")
-//             recur left
-//               conj acc $ :: :text buffer
-//               [] $ &str:slice cursor 3
-//               , :code
-//           (table-line? cursor)
-//             recur left
-//               conj acc $ :: :text buffer
-//               [] $ split-table-content cursor
-//               , :table
-//           true $ recur left acc (conj buffer cursor) :text
-//         :code $ if (starts-with? cursor "|```")
-//           recur left
-//             conj acc $ :: :code buffer
-//             []
-//             , :empty
-//           recur left acc (conj buffer cursor) :code
-//         :table $ if (table-line? cursor)
-//           recur left acc
-//             conj buffer $ split-table-content cursor
-//             , :table
-//           recur left
-//             conj acc $ :: :table buffer
-//             []
-//             , :empty
-
 ///|
 fn split_block_iter(
   lines : Array[String],
@@ -117,79 +50,70 @@ fn split_block_iter(
   let cursor = lines[0]
   let left = lines[1:].to_array()
   match buffer {
-    Block::Empty =>
+    Empty =>
       if cursor == "" {
-        split_block_iter(left, acc, Block::Empty)
+        split_block_iter(left, acc, Empty)
       } else if cursor.has_prefix("```") {
         split_block_iter(
           left,
           acc,
-          Block::Code(
-            @immut/array.from_array([cursor.substring(start=3).to_string()]),
-          ),
+          Code(@immut/array.from_array([cursor.substring(start=3).to_string()])),
         )
       } else if is_table_line(cursor) {
         if cursor != "" {
-          acc.push(Block::Text(@immut/array.from_array([cursor])))
+          acc.push(Text(@immut/array.from_array([cursor])))
         }
         split_block_iter(
           left,
           acc,
-          Block::Table(@immut/array.from_array([split_table_content(cursor)])),
+          Table(@immut/array.from_array([split_table_content(cursor)])),
         )
       } else {
-        split_block_iter(
-          left,
-          acc,
-          Block::Text(@immut/array.from_array([cursor])),
-        )
+        split_block_iter(left, acc, Text(@immut/array.from_array([cursor])))
       }
-    Block::Text(buffer) =>
+    Text(buffer) =>
       if cursor == "" {
         if not(buffer.is_empty()) {
-          acc.push(Block::Text(buffer))
+          acc.push(Text(buffer))
         }
-        split_block_iter(left, acc, Block::Empty)
+        split_block_iter(left, acc, Empty)
       } else if cursor.has_prefix("```") {
         if not(buffer.is_empty()) {
-          acc.push(Block::Text(buffer))
+          acc.push(Text(buffer))
         }
-        split_block_iter(left, acc, Block::Code(buffer))
+        split_block_iter(left, acc, Code(buffer))
       } else if is_table_line(cursor) {
         if not(buffer.is_empty()) {
-          acc.push(Block::Text(buffer))
+          acc.push(Text(buffer))
         }
         split_block_iter(
           left,
           acc,
-          Block::Table(@immut/array.from_array([split_table_content(cursor)])),
+          Table(@immut/array.from_array([split_table_content(cursor)])),
         )
       } else {
-        split_block_iter(left, acc, Block::Text(buffer.push(cursor)))
+        split_block_iter(left, acc, Text(buffer.push(cursor)))
       }
-    Block::Code(buffer) =>
+    Code(buffer) =>
       if cursor.has_prefix("```") {
-        acc.push(Block::Code(buffer))
-        split_block_iter(left, acc, Block::Empty)
+        acc.push(Code(buffer))
+        split_block_iter(left, acc, Empty)
       } else {
-        split_block_iter(left, acc, Block::Code(buffer.push(cursor)))
+        split_block_iter(left, acc, Code(buffer.push(cursor)))
       }
-    Block::Table(buffer) =>
+    Table(buffer) =>
       if is_table_line(cursor) {
         split_block_iter(
           left,
           acc,
-          Block::Table(buffer.push(split_table_content(cursor))),
+          Table(buffer.push(split_table_content(cursor))),
         )
       } else {
-        acc.push(Block::Table(buffer))
-        split_block_iter(left, acc, Block::Empty)
+        acc.push(Table(buffer))
+        split_block_iter(left, acc, Empty)
       }
   }
 }
-
-// defn split-line (line)
-//   split-line-iter ([]) line | :text
 
 ///|
 priv enum LineChunk {
@@ -220,87 +144,6 @@ fn LineChunk::is_empty(self : LineChunk) -> Bool {
 fn split_line(line : String) -> Array[LineChunk] {
   split_line_iter([], line, Text(""))
 }
-
-// defn split-line-iter (acc line buffer mode)
-//   if (= | line)
-//     if (= | buffer) acc $ conj acc (:: mode buffer)
-//     let
-//         cursor $ first line
-//         left $ &str:slice line 1
-//       case-default mode
-//         raise $ str "|Unknown mode:" mode
-//         :text $ case-default cursor
-//           recur acc left (str buffer cursor) :text
-//           "|`" $ recur
-//             if (some? buffer)
-//               conj acc $ :: :text buffer
-//               , acc
-//             , left | :code
-//           |h $ if
-//             or
-//               = |http:// $ &str:slice line 0 7
-//               = |https:// $ &str:slice line 0 8
-//             let
-//                 pieces $ split line "| "
-//               recur
-//                 conj
-//                   if (= | buffer) acc $ conj acc (:: :text buffer)
-//                   :: :url $ first pieces
-//                 str "| " $ join-str (rest pieces) "| "
-//                 , | :text
-//             recur acc left (str buffer |h) :text
-//           |[ $ let
-//               guess $ get0 (.!match line peek-link)
-//             if (some? guess)
-//               recur
-//                 conj
-//                   if (= | buffer) acc $ conj acc (:: :text buffer)
-//                   :: :link guess
-//                 .!replace line guess |
-//                 , | :text
-//               recur acc left (str buffer |[) :text
-//           |! $ let
-//               guess $ get0 (.!match line peek-image)
-//             if (some? guess)
-//               recur
-//                 conj
-//                   if (= | buffer) acc $ conj acc (:: :text buffer)
-//                   :: :image guess
-//                 .replace line guess |
-//                 , | :text
-//               recur acc left (str buffer |!) :text
-//           |* $ if (= left "\"")
-//             recur acc left (str buffer |*) :text
-//             let
-//                 next-left $ &str:slice left 1
-//               if
-//                 = "\"*" $ first left
-//                 let
-//                     matched $ .!match next-left peek-emphasis
-//                   if (some? matched)
-//                     let
-//                         emphasis $ get1 matched
-//                         rest-line $ &str:slice next-left
-//                           + 2 $ count emphasis
-//                       recur
-//                         conj acc (:: :text buffer) (:: :emphasis emphasis)
-//                         , rest-line | :text
-//                     recur acc left (str buffer |*) :text
-//                 let
-//                     matched $ .!match left peek-italic
-//                   if (some? matched)
-//                     let
-//                         italic $ get1 matched
-//                         rest-line $ &str:slice next-left (count italic)
-//                       recur
-//                         conj acc (:: :text buffer) (:: :italic italic)
-//                         , rest-line | :text
-//                     recur acc left (str buffer |*) :text
-//         :code $ if (= cursor "|`")
-//           recur
-//             conj acc $ :: :code buffer
-//             , left | :text
-//           recur acc left (str buffer cursor) :code
 
 ///|
 fn split_line_iter(
@@ -380,7 +223,7 @@ fn split_line_iter(
               } else {
                 split_line_iter(acc, left, Text(buffer + "*"))
               }
-            } else if match_string_pattern(left, peek_itali) is Some(matched) {
+            } else if match_string_pattern(left, peek_italic) is Some(matched) {
               let italic = matched.selects[0]
               let rest_line = next_left.substring(start=italic.length())
               acc.push(mode)
@@ -403,12 +246,6 @@ fn split_line_iter(
   }
 }
 
-// defn split-table-content (cursor)
-//   -> cursor
-//     .slice 1 $ dec (count cursor)
-//     .split "\"|"
-//     .map $ fn (x) (.trim x)
-
 ///|
 fn split_table_content(cursor : String) -> Array[String] {
   cursor
@@ -417,9 +254,6 @@ fn split_table_content(cursor : String) -> Array[String] {
   .map(fn(x) { x.trim(" ").to_string() })
   .to_array()
 }
-
-// defn table-line? (cursor)
-//   and (starts-with? cursor "\"|") (ends-with? cursor "\"|")
 
 ///|
 fn is_table_line(cursor : String) -> Bool {

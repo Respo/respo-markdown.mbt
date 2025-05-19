@@ -19,28 +19,19 @@ struct Task {
 
 ///|
 enum ActionOp {
-  Noop
   StatesChange(@respo.RespoUpdateState)
 }
 
 ///|
-impl Default for ActionOp with default() -> ActionOp {
-  Noop
-}
-
-///|
 impl @respo_node.RespoAction for ActionOp with build_states_action(cursor, a) {
-  StatesChange({ cursor, data: a.map(fn(x) { x.to_json() }) })
+  StatesChange({ cursor, data: a.map(ToJson::to_json) })
 }
 
 ///|
 impl Show for ActionOp with output(self, logger) -> Unit {
   let s = match self {
-    Noop => "Noop"
     StatesChange(states) =>
       "StatesChange(\{states.cursor}  \{states.data.to_json()})"
-    // Intent(_intent) => "Intent(...)"
-
   }
   logger.write_string(s)
 }
@@ -54,7 +45,6 @@ fn get_states(self : Store) -> @respo.RespoStatesTree {
 fn update(self : Store, op : ActionOp) -> Unit {
   match op {
     StatesChange(states) => self.states.set_in_mut(states)
-    _ => ()
   }
 }
 
