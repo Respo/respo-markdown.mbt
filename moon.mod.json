@@ -1,11 +1,8 @@
 {
   "name": "tiye/respo-markdown",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "deps": {
-    "tiye/respo": "0.0.31",
-    // "tiye/respo": {
-    //   "path": "/Users/chenyong/repo/respo/respo.mbt"
-    // },
+    "tiye/respo": "0.0.32",
     "tiye/dom-ffi": "0.0.9"
   },
   "readme": "README.md",
