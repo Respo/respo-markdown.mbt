@@ -6,7 +6,7 @@
 // def peek-emphasis $ new js/RegExp "\"^(.+)\\*\\*"
 
 ///|
-let peek_emphasis : JsRegex = JsRegex::js_regex_create("^(.*)\\*\\*", "")
+let peek_emphasis : JsRegex = JsRegex::js_regex_create("^([^\\*]*)\\*\\*", "")
 
 // def peek-image $ new js/RegExp "\"^\\!\\[[^\\]]*\\]\\([^\\)]+\\)" "\"g"
 
@@ -31,7 +31,7 @@ let peek_link : JsRegex = JsRegex::js_regex_create(
 //   split-block-iter (split-lines text) ([]) ([]) :empty
 
 ///|
-enum Block {
+priv enum Block {
   Empty
   Text(@immut/array.T[String])
   Code(@immut/array.T[String])
@@ -108,7 +108,7 @@ fn split_block_iter(
 ) -> Array[Block] {
   if lines.is_empty() {
     if buffer is Empty {
-      acc.push(Block::Empty)
+      //
     } else {
       acc.push(buffer)
     }
@@ -120,7 +120,7 @@ fn split_block_iter(
     Block::Empty =>
       if cursor == "" {
         split_block_iter(left, acc, Block::Empty)
-      } else if cursor.has_prefix("|```") {
+      } else if cursor.has_prefix("```") {
         split_block_iter(
           left,
           acc,
@@ -129,6 +129,9 @@ fn split_block_iter(
           ),
         )
       } else if is_table_line(cursor) {
+        if cursor != "" {
+          acc.push(Block::Text(@immut/array.from_array([cursor])))
+        }
         split_block_iter(
           left,
           acc,
@@ -143,10 +146,19 @@ fn split_block_iter(
       }
     Block::Text(buffer) =>
       if cursor == "" {
+        if not(buffer.is_empty()) {
+          acc.push(Block::Text(buffer))
+        }
         split_block_iter(left, acc, Block::Empty)
-      } else if cursor.has_prefix("|```") {
+      } else if cursor.has_prefix("```") {
+        if not(buffer.is_empty()) {
+          acc.push(Block::Text(buffer))
+        }
         split_block_iter(left, acc, Block::Code(buffer))
       } else if is_table_line(cursor) {
+        if not(buffer.is_empty()) {
+          acc.push(Block::Text(buffer))
+        }
         split_block_iter(
           left,
           acc,
@@ -156,7 +168,8 @@ fn split_block_iter(
         split_block_iter(left, acc, Block::Text(buffer.push(cursor)))
       }
     Block::Code(buffer) =>
-      if cursor.has_prefix("|```") {
+      if cursor.has_prefix("```") {
+        acc.push(Block::Code(buffer))
         split_block_iter(left, acc, Block::Empty)
       } else {
         split_block_iter(left, acc, Block::Code(buffer.push(cursor)))
@@ -169,6 +182,7 @@ fn split_block_iter(
           Block::Table(buffer.push(split_table_content(cursor))),
         )
       } else {
+        acc.push(Block::Table(buffer))
         split_block_iter(left, acc, Block::Empty)
       }
   }
@@ -178,7 +192,7 @@ fn split_block_iter(
 //   split-line-iter ([]) line | :text
 
 ///|
-enum LineChunk {
+priv enum LineChunk {
   Text(String)
   Code(String)
   Url(String)
@@ -346,7 +360,7 @@ fn split_line_iter(
               acc.push(mode)
             }
             acc.push(Image(guess.to_string()))
-            split_line_iter(acc, line.replace(old=guess, new="|"), Text(""))
+            split_line_iter(acc, line.replace(old=guess, new=""), Text(""))
           } else {
             split_line_iter(acc, left, Text(buffer + cursor.to_string()))
           }
@@ -357,7 +371,7 @@ fn split_line_iter(
             let next_left = left.substring(start=1)
             if left.has_prefix("*") {
               if match_string_pattern(next_left, peek_emphasis) is Some(matched) {
-                // println("emphasis: \{matched}")
+                println("emphasis: \{matched}")
                 let emphasis = matched.selects[0]
                 let rest_line = next_left.substring(start=emphasis.length() + 2)
                 acc.push(mode)
@@ -368,7 +382,8 @@ fn split_line_iter(
               }
             } else if match_string_pattern(left, peek_itali) is Some(matched) {
               let italic = matched.selects[0]
-              let rest_line = left.substring(start=italic.length())
+              let rest_line = next_left.substring(start=italic.length())
+              acc.push(mode)
               acc.push(Italic(italic))
               split_line_iter(acc, rest_line, Text(""))
             } else {

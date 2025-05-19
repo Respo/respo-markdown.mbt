@@ -15,7 +15,14 @@ fnalias @respo_node.(
 )
 
 ///|
-fnalias @respo.(ui_row_middle, ui_row, ui_expand)
+fnalias @respo.(
+  ui_row_middle,
+  ui_row,
+  ui_expand,
+  ui_textarea,
+  ui_font_code,
+  ui_input
+)
 
 ///|
 struct ContainerState {
@@ -43,7 +50,7 @@ fn comp_container[Op : @respo_node.RespoAction](
           width=40,
           alt="Respo",
         ),
-        space(height=8),
+        space(width=8),
         a(
           href="https://github.com/Respo/respo-markdown.calcit",
           inner_text="respo-markdown",
@@ -51,7 +58,7 @@ fn comp_container[Op : @respo_node.RespoAction](
       ]),
       div([
         comp_md_block(
-          "|Respo Markdown component renders Markdown text to virtual DOM in Respo. Require the code with\n\n```cirru\n:require\n  respo-md.comp.md :refer $ comp-md comp-md-block\n\ncomp-md \"|content\"\n\ncomp-md-block \"|content\\nnew line\" $ {}\n```\n",
+          "Respo Markdown component renders Markdown text to virtual DOM in Respo. Require the code with\n\n```cirru\n\{code_demo}\n```\n",
         ),
       ]),
       space(height=40),
@@ -59,7 +66,7 @@ fn comp_container[Op : @respo_node.RespoAction](
         div([comp_md("This is an example for using `comp-md`:")]),
         div([
           input(
-            class_name="input",
+            class_name=ui_input,
             style=respo_style(width=100 |> Percent),
             value=state.text,
             placeholder="text inline",
@@ -85,7 +92,7 @@ fn comp_container[Op : @respo_node.RespoAction](
             textarea(
               placeholder="multi-line content",
               value=state.draft,
-              class_list=["textarea", "font-code!"],
+              class_list=[ui_textarea, ui_font_code],
               style=respo_style(
                 height=100 |> Percent,
                 width=100 |> Percent,
@@ -101,7 +108,9 @@ fn comp_container[Op : @respo_node.RespoAction](
               }),
             ),
           ]),
-          div(class_name=ui_expand, [comp_md_block(state.draft)]),
+          div(class_name=ui_expand, style=respo_style(padding=8 |> Px), [
+            comp_md_block(state.draft),
+          ]),
         ]),
       ]),
       space(height=200),

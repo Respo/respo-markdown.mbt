@@ -21,14 +21,6 @@ fnalias @respo_node.(
 )
 
 ///|
-fnalias @respo.code_fonts
-
-///|
-pub(all) struct MarkdownBlockOptions {
-  class_name : String?
-  style : @respo_node.RespoStyle?
-  highlighter : ((String, String) -> String)?
-}
 
 // defcomp comp-code-block (lines options)
 //   let
@@ -39,6 +31,8 @@ pub(all) struct MarkdownBlockOptions {
 //     if (= lang "\"cirru")
 //       memof1-call comp-cirru-snippet content $ {} (:class-name style-code-block)
 //       memof1-call comp-snippet content $ {} (:class-name style-code-block) (:highlighter highlight-fn) (:lang lang)
+
+fnalias @respo.code_fonts
 
 ///|
 fn comp_code_block[T](
@@ -71,7 +65,17 @@ fn comp_snippet[T](
 
 ///|
 let style_snippet : String = declare_static_style([
-  ("&", respo_style(font_family=code_fonts)),
+  (
+    "&",
+    respo_style(
+      font_family=code_fonts,
+      border=(1, Solid, Hsl(0, 0, 90)),
+      padding=8 |> Px,
+      border_radius=4,
+      line_height=20 |> Px,
+      font_size=12,
+    ),
+  ),
 ])
 
 // defn comp-image (chunk)
@@ -84,7 +88,7 @@ let style_snippet : String = declare_static_style([
 ///|
 fn comp_image[T](chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.substring(start=2, end=chunk.length() - 1)
-  let xs = useful.split("|](").map(@string.View::to_string).collect()
+  let xs = useful.split("](").map(@string.View::to_string).collect()
   if xs is [content, url, ..] {
     img(class_name=style_image, src=url, alt=content)
   } else {
@@ -182,7 +186,7 @@ fn comp_line[T](line : String) -> @respo_node.RespoNode[T] {
 ///|
 fn comp_link[T](chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.substring(start=1, end=chunk.length() - 1)
-  let xs = useful.split("|](").map(@string.View::to_string).collect()
+  let xs = useful.split("](").map(@string.View::to_string).collect()
   if xs is [content, url] {
     span(class_name=style_default_link, [
       if content.has_prefix("`") && content.has_suffix("`") {
@@ -200,7 +204,7 @@ fn comp_link[T](chunk : String) -> @respo_node.RespoNode[T] {
     ])
   } else {
     @dom_ffi.log("Error in comp-link: " + chunk)
-    panic()
+    span(class_name=style_default_link, inner_text="\{xs}", [])
   }
 }
 
@@ -461,7 +465,7 @@ let style_inline_code : String = declare_static_style([
   (
     "&",
     respo_style(
-      border=(0, Solid, Hsl(0, 0, 86)),
+      border=(1, Solid, Hsl(0, 0, 86)),
       border_radius=4,
       font_size=12,
       padding="2px 4px" |> Custom,

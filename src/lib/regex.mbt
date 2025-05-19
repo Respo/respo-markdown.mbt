@@ -1,8 +1,8 @@
 ///|
-extern type JsRegex
+priv extern type JsRegex
 
 ///| extract basic information from a regex match result
-struct MatchResult {
+priv struct MatchResult {
   matched : String
   // start : UInt
   selects : Array[String]
@@ -19,12 +19,12 @@ extern "js" fn JsRegex::js_regex_create(
 extern "js" fn JsRegex::match_str(regex : JsRegex, input : String) -> JsValue =
   #| (regex, input) => {
   #|   let ret = input.match(regex);
-  #|   // console.log("match result: ", ret);
+  #|   console.log("match result: ", ret);
   #|   return ret;
   #| }
 
 ///|
-extern type JsValue
+priv extern type JsValue
 
 ///|
 extern "js" fn JsValue::is_null(obj : JsValue) -> Bool =
