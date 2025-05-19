@@ -6,7 +6,7 @@ struct MatchResult {
   matched : String
   // start : UInt
   selects : Array[String]
-}
+} derive(Show)
 
 ///|
 extern "js" fn JsRegex::js_regex_create(
@@ -17,7 +17,11 @@ extern "js" fn JsRegex::js_regex_create(
 
 ///|
 extern "js" fn JsRegex::match_str(regex : JsRegex, input : String) -> JsValue =
-  #| (regex, input) => regex.match(input)
+  #| (regex, input) => {
+  #|   let ret = input.match(regex);
+  #|   // console.log("match result: ", ret);
+  #|   return ret;
+  #| }
 
 ///|
 extern type JsValue
@@ -55,8 +59,11 @@ fn match_string_pattern(input : String, reg : JsRegex) -> MatchResult? {
     let matched = JsValue::get_index(ret, 0)
     // let start = JsValue::get_prop(matched, "index")
     let selects : Array[String] = Array::new()
-    let len = JsValue::get_length(ret).reinterpret_as_int() - 1
+    let len = JsValue::get_length(ret).reinterpret_as_int()
     for i = 0; i < len; i = i + 1 {
+      if i == 0 {
+        continue
+      }
       let item = JsValue::get_index(ret, i.reinterpret_as_uint())
       selects.push(item.reinterpret_as_string())
     }

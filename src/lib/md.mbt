@@ -376,7 +376,7 @@ fn render_inline[T](text : String) -> Array[@respo_node.RespoNode[T]] {
         els.push(a(href=content, inner_text=content, target=Blank))
       Link(content) => els.push(comp_link(content))
       Image(content) => els.push(comp_image(content))
-      Text(content) => els.push(div([span(inner_text=content, [])]))
+      Text(content) => els.push(span(inner_text=content, []))
       Emphasis(content) => els.push(b(render_inline(content)))
       Italic(content) => els.push(i(inner_text=content, []))
     }

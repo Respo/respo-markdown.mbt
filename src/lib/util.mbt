@@ -308,7 +308,12 @@ fn split_line_iter(
   match mode {
     Text(buffer) =>
       match cursor {
-        '`' => split_line_iter(acc, left, Code(buffer + cursor.to_string()))
+        '`' => {
+          if not(buffer.is_empty()) {
+            acc.push(mode)
+          }
+          split_line_iter(acc, left, Code(""))
+        }
         'h' =>
           if line.has_prefix("http://") || line.has_prefix("https://") {
             let pieces = line
@@ -346,14 +351,16 @@ fn split_line_iter(
             split_line_iter(acc, left, Text(buffer + cursor.to_string()))
           }
         '*' =>
-          if left == "\"" {
+          if left == "" {
             split_line_iter(acc, left, Text(buffer + "*"))
           } else {
             let next_left = left.substring(start=1)
             if left.has_prefix("*") {
               if match_string_pattern(next_left, peek_emphasis) is Some(matched) {
+                // println("emphasis: \{matched}")
                 let emphasis = matched.selects[0]
-                let rest_line = left.substring(start=emphasis.length() + 2)
+                let rest_line = next_left.substring(start=emphasis.length() + 2)
+                acc.push(mode)
                 acc.push(Emphasis(emphasis))
                 split_line_iter(acc, rest_line, Text(""))
               } else {
