@@ -31,10 +31,10 @@ struct ContainerState {
 } derive(ToJson, @json.FromJson, Default)
 
 ///|
-fn comp_container[Op : @respo_node.RespoAction](
+fn[Op : @respo_node.RespoAction] comp_container(
   states : RespoStatesTree
 ) -> @respo_node.RespoNode[Op] {
-  let cursor = states.cursor
+  let cursor = states.path()
   let state = (states.cast_branch() : ContainerState)
   div(
     class_name=ui_global,
@@ -70,14 +70,11 @@ fn comp_container[Op : @respo_node.RespoAction](
             style=respo_style(width=100 |> Percent),
             value=state.text,
             placeholder="text inline",
-            event={}..set(Input, fn(e, dispatch) {
+            on_input=fn(e, dispatch) {
               if e is Input(value~, ..) {
-                dispatch.set_state!(cursor, ContainerState::{
-                  ..state,
-                  text: value,
-                })
+                dispatch.set_state!(cursor, { ..state, text: value })
               }
-            }),
+            },
           ),
           comp_md(state.text),
         ]),
@@ -98,14 +95,11 @@ fn comp_container[Op : @respo_node.RespoAction](
                 width=100 |> Percent,
                 font_size=13,
               ),
-              event={}..set(Input, fn(e, dispatch) {
+              on_input=fn(e, dispatch) {
                 if e is Input(value~, ..) {
-                  dispatch.set_state!(cursor, ContainerState::{
-                    ..state,
-                    draft: value,
-                  })
+                  dispatch.set_state!(cursor, { ..state, draft: value })
                 }
-              }),
+              },
             ),
           ]),
           div(class_name=ui_expand, style=respo_style(padding=8 |> Px), [

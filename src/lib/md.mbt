@@ -1,6 +1,6 @@
 ///|
 fnalias @respo_node.(
-  declare_static_style,
+  static_style,
   respo_style,
   blockquote,
   create_element,
@@ -24,7 +24,7 @@ fnalias @respo_node.(
 fnalias @respo.code_fonts
 
 ///|
-fn comp_code_block[T](
+fn[T] comp_code_block(
   lines : Array[String],
   highlighter~ : (String, String) -> String = fn(x, _) -> String { x }
 ) -> @respo_node.RespoNode[T] {
@@ -39,7 +39,7 @@ fn comp_code_block[T](
 }
 
 ///|
-fn comp_snippet[T](
+fn[T] comp_snippet(
   content : String,
   class_name? : String,
   highliter? : (String, String) -> String,
@@ -53,7 +53,7 @@ fn comp_snippet[T](
 }
 
 ///|
-let style_snippet : String = declare_static_style([
+let style_snippet : String = static_style([
   (
     "&",
     respo_style(
@@ -68,7 +68,7 @@ let style_snippet : String = declare_static_style([
 ])
 
 ///|
-fn comp_image[T](chunk : String) -> @respo_node.RespoNode[T] {
+fn[T] comp_image(chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.substring(start=2, end=chunk.length() - 1)
   let xs = useful.split("](").map(@string.View::to_string).collect()
   if xs is [content, url, ..] {
@@ -81,7 +81,7 @@ fn comp_image[T](chunk : String) -> @respo_node.RespoNode[T] {
 }
 
 ///|
-fn comp_line[T](line : String) -> @respo_node.RespoNode[T] {
+fn[T] comp_line(line : String) -> @respo_node.RespoNode[T] {
   if line.has_prefix("# ") {
     h1(render_inline(line.substring(start=2)))
   } else if line.has_prefix("## ") {
@@ -113,7 +113,7 @@ fn comp_line[T](line : String) -> @respo_node.RespoNode[T] {
 }
 
 ///|
-fn comp_link[T](chunk : String) -> @respo_node.RespoNode[T] {
+fn[T] comp_link(chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.substring(start=1, end=chunk.length() - 1)
   let xs = useful.split("](").map(@string.View::to_string).collect()
   if xs is [content, url] {
@@ -138,7 +138,7 @@ fn comp_link[T](chunk : String) -> @respo_node.RespoNode[T] {
 }
 
 ///|
-pub fn comp_md[T](
+pub fn[T] comp_md(
   text : String,
   class_name? : String
 ) -> @respo_node.RespoNode[T] {
@@ -146,7 +146,7 @@ pub fn comp_md[T](
 }
 
 ///|
-pub fn comp_md_block[T](
+pub fn[T] comp_md_block(
   text : String,
   class_name? : String,
   style? : @respo_node.RespoStyle,
@@ -171,7 +171,7 @@ pub fn comp_md_block[T](
 }
 
 ///|
-fn comp_table_block[T](
+fn[T] comp_table_block(
   lines : Array[Array[String]]
 ) -> @respo_node.RespoNode[T] {
   let header_line = lines[0]
@@ -224,7 +224,7 @@ fn comp_table_block[T](
 }
 
 ///|
-fn comp_text_block[T](lines : Array[String]) -> @respo_node.RespoNode[T] {
+fn[T] comp_text_block(lines : Array[String]) -> @respo_node.RespoNode[T] {
   return div(
     class_name=style_paragraph,
     lines.iter().map(fn(line) { comp_line(line) }).collect(),
@@ -232,7 +232,7 @@ fn comp_text_block[T](lines : Array[String]) -> @respo_node.RespoNode[T] {
 }
 
 ///|
-fn render_inline[T](text : String) -> Array[@respo_node.RespoNode[T]] {
+fn[T] render_inline(text : String) -> Array[@respo_node.RespoNode[T]] {
   let els = []
   let lines = split_line(text)
   for chunk in lines {
@@ -252,7 +252,7 @@ fn render_inline[T](text : String) -> Array[@respo_node.RespoNode[T]] {
 }
 
 ///|
-let style_blockquote : String = declare_static_style([
+let style_blockquote : String = static_style([
   (
     "&",
     respo_style(
@@ -265,18 +265,18 @@ let style_blockquote : String = declare_static_style([
 ])
 
 ///|
-let style_code_block : String = declare_static_style([
+let style_code_block : String = static_style([
   ("&", respo_style(max_width=60 |> Vw)),
 ])
 
 ///|
-let style_default_link : String = declare_static_style([
+let style_default_link : String = static_style([
   ("&", respo_style(opacity=0.9, transition_duration=200 |> Ms)),
   ("&:hover", respo_style(opacity=1, transform=1 |> Scale)),
 ])
 
 ///|
-let style_image : String = declare_static_style([
+let style_image : String = static_style([
   (
     "&",
     respo_style(
@@ -288,16 +288,13 @@ let style_image : String = declare_static_style([
   ),
 ])
 
-// defstyle style-indent $ {}
-//   "\"&" $ {} (:white-space :pre) (:float :left)
-
 ///|
-let style_indent : String = declare_static_style([
+let style_indent : String = static_style([
   ("&", respo_style(white_space="pre", float="left")),
 ])
 
 ///|
-let style_inline_code : String = declare_static_style([
+let style_inline_code : String = static_style([
   (
     "&",
     respo_style(
@@ -311,7 +308,7 @@ let style_inline_code : String = declare_static_style([
 ])
 
 ///|
-let style_line_list : String = declare_static_style([
+let style_line_list : String = static_style([
   ("&", respo_style(margin_left=12 |> Px)),
   (
     "&::marker",
@@ -327,7 +324,7 @@ let style_line_list : String = declare_static_style([
 ])
 
 ///|
-let style_md_table : String = declare_static_style([
+let style_md_table : String = static_style([
   (
     "&",
     respo_style(border=(1, Solid, Hsl(0, 0, 90)))
@@ -356,4 +353,4 @@ let style_md_table : String = declare_static_style([
 ])
 
 ///|
-let style_paragraph : String = declare_static_style([("&", respo_style())])
+let style_paragraph : String = static_style([("&", respo_style())])
