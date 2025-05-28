@@ -37,7 +37,7 @@ impl Show for ActionOp with output(self, logger) -> Unit {
 }
 
 ///|
-fn get_states(self : Store) -> @respo.RespoStatesTree {
+fn Store::get_states(self : Store) -> @respo.RespoStatesTree {
   self.states
 }
 
