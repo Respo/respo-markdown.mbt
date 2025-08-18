@@ -1,5 +1,5 @@
 ///|
-fnalias @respo.ui_global
+let ui_global = @respo.ui_global
 
 ///|
 fnalias @respo_node.(div, respo_style)

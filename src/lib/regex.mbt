@@ -37,15 +37,7 @@ extern "js" fn JsValue::get_length(obj : JsValue) -> UInt =
   #| (obj) => obj.length
 
 ///|
-extern "js" fn JsValue::get_prop(obj : JsValue, p : String) -> JsValue =
-  #| (obj, p) => obj[p]
-
-///|
 extern "js" fn JsValue::reinterpret_as_string(obj : JsValue) -> String =
-  #| (obj) => obj
-
-///|
-extern "js" fn JsValue::reinterpret_as_int(obj : JsValue) -> Int =
   #| (obj) => obj
 
 ///|

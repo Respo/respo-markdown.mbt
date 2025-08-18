@@ -15,14 +15,22 @@ fnalias @respo_node.(
 )
 
 ///|
-fnalias @respo.(
-  ui_row_middle,
-  ui_row,
-  ui_expand,
-  ui_textarea,
-  ui_font_code,
-  ui_input
-)
+let ui_row_middle = @respo.ui_row_middle
+
+///|
+let ui_row = @respo.ui_row
+
+///|
+let ui_expand = @respo.ui_expand
+
+///|
+let ui_textarea = @respo.ui_textarea
+
+///|
+let ui_font_code = @respo.ui_font_code
+
+///|
+let ui_input = @respo.ui_input
 
 ///|
 struct ContainerState {

@@ -22,7 +22,7 @@ priv enum Block {
   Text(@immut/array.T[String])
   Code(@immut/array.T[String])
   Table(@immut/array.T[Array[String]])
-} derive(Show, Eq)
+}
 
 ///|
 fn split_block(text : String) -> Array[Block] {
@@ -124,7 +124,7 @@ priv enum LineChunk {
   Image(String)
   Emphasis(String)
   Italic(String)
-} derive(Show, Eq)
+}
 
 ///|
 fn LineChunk::is_empty(self : LineChunk) -> Bool {
