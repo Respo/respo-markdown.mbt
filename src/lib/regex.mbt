@@ -1,5 +1,6 @@
 ///|
-priv extern type JsRegex
+#external
+priv type JsRegex
 
 ///| extract basic information from a regex match result
 priv struct MatchResult {
@@ -11,7 +12,7 @@ priv struct MatchResult {
 ///|
 extern "js" fn JsRegex::js_regex_create(
   pattern : String,
-  flags : String
+  flags : String,
 ) -> JsRegex =
   #| (pattern, flags) => new RegExp(pattern, flags)
 
@@ -24,7 +25,8 @@ extern "js" fn JsRegex::match_str(regex : JsRegex, input : String) -> JsValue =
   #| }
 
 ///|
-priv extern type JsValue
+#external
+priv type JsValue
 
 ///|
 extern "js" fn JsValue::is_null(obj : JsValue) -> Bool =

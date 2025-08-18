@@ -32,7 +32,7 @@ struct ContainerState {
 
 ///|
 fn[Op : @respo_node.RespoAction] comp_container(
-  states : RespoStatesTree
+  states : RespoStatesTree,
 ) -> @respo_node.RespoNode[Op] {
   let cursor = states.path()
   let state = (states.cast_branch() : ContainerState)
@@ -72,7 +72,7 @@ fn[Op : @respo_node.RespoAction] comp_container(
             placeholder="text inline",
             on_input=fn(e, dispatch) {
               if e is Input(value~, ..) {
-                dispatch.set_state!(cursor, { ..state, text: value })
+                dispatch.set_state(cursor, { ..state, text: value })
               }
             },
           ),
@@ -97,7 +97,7 @@ fn[Op : @respo_node.RespoAction] comp_container(
               ),
               on_input=fn(e, dispatch) {
                 if e is Input(value~, ..) {
-                  dispatch.set_state!(cursor, { ..state, draft: value })
+                  dispatch.set_state(cursor, { ..state, draft: value })
                 }
               },
             ),

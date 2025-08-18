@@ -37,7 +37,7 @@ fn split_block(text : String) -> Array[Block] {
 fn split_block_iter(
   lines : Array[String],
   acc : Array[Block],
-  buffer : Block
+  buffer : Block,
 ) -> Array[Block] {
   if lines.is_empty() {
     if buffer is Empty {
@@ -149,7 +149,7 @@ fn split_line(line : String) -> Array[LineChunk] {
 fn split_line_iter(
   acc : Array[LineChunk],
   line : String,
-  mode : LineChunk
+  mode : LineChunk,
 ) -> Array[LineChunk] {
   if line == "" {
     if mode.is_empty() {
