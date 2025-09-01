@@ -41,7 +41,8 @@ fn Store::get_states(self : Store) -> @respo.RespoStatesTree {
   self.states
 }
 
-///| TODO mutation might break memoization infuture
+///|
+/// TODO mutation might break memoization infuture
 fn update(self : Store, op : ActionOp) -> Unit {
   match op {
     StatesChange(states) => self.states.set_in_mut(states)

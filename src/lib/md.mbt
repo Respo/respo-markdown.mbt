@@ -25,7 +25,7 @@ let code_fonts = @respo.code_fonts
 ///|
 fn[T] comp_code_block(
   lines : Array[String],
-  highlighter~ : (String, String) -> String = fn(x, _) -> String { x },
+  highlighter? : (String, String) -> String = fn(x, _) -> String { x },
 ) -> @respo_node.RespoNode[T] {
   let lang = lines[0]
   let content = lines[1:].to_array().join("\n")
@@ -149,7 +149,7 @@ pub fn[T] comp_md_block(
   text : String,
   class_name? : String,
   style? : @respo_node.RespoStyle,
-  highlighter~ : (String, String) -> String = fn(x, _) -> String { x },
+  highlighter? : (String, String) -> String = fn(x, _) -> String { x },
 ) -> @respo_node.RespoNode[T] {
   let blocks = split_block(text)
   return div(

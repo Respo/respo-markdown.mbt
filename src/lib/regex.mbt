@@ -2,7 +2,8 @@
 #external
 priv type JsRegex
 
-///| extract basic information from a regex match result
+///|
+/// extract basic information from a regex match result
 priv struct MatchResult {
   matched : String
   // start : UInt
