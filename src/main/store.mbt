@@ -47,8 +47,3 @@ fn update(self : Store, op : ActionOp) -> Unit {
     StatesChange(states) => self.states.set_in_mut(states)
   }
 }
-
-///|
-impl Show for Store with output(self, logger) -> Unit {
-  logger.write_string(self.to_json().stringify(indent=2))
-}

@@ -1,5 +1,5 @@
 ///|
-fnalias @respo.ui_global
+let ui_global = @respo.ui_global
 
 ///|
 fnalias @respo_node.(div, respo_style)
@@ -9,8 +9,8 @@ let app_store_key : String = "mbt-workflow"
 
 ///|
 fn view(
-  store : Store
-) -> @respo_node.RespoNode[ActionOp]!@respo_node.RespoCommonError {
+  store : Store,
+) -> @respo_node.RespoNode[ActionOp] raise @respo_node.RespoCommonError {
   if false {
     raise @respo_node.RespoCommonError("TODO")
   }
@@ -35,7 +35,7 @@ fn main {
   }
   app.backup_model_beforeunload()
   // @dom_ffi.log("store: " + app.store.val.to_json().stringify(indent=2))
-  app.render_loop(fn() { view!(app.store.val) }, fn(op) {
+  app.render_loop(fn() { view(app.store.val) }, fn(op) {
     @dom_ffi.log("Action: " + op.to_string())
     app.store.val.update(op)
   })

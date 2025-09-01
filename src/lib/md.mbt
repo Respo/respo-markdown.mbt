@@ -16,17 +16,16 @@ fnalias @respo_node.(
   h3,
   h4,
   pre,
-  li,
-  text_node
+  li
 )
 
 ///|
-fnalias @respo.code_fonts
+let code_fonts = @respo.code_fonts
 
 ///|
 fn[T] comp_code_block(
   lines : Array[String],
-  highlighter~ : (String, String) -> String = fn(x, _) -> String { x }
+  highlighter~ : (String, String) -> String = fn(x, _) -> String { x },
 ) -> @respo_node.RespoNode[T] {
   let lang = lines[0]
   let content = lines[1:].to_array().join("\n")
@@ -43,11 +42,11 @@ fn[T] comp_snippet(
   content : String,
   class_name? : String,
   highliter? : (String, String) -> String,
-  lang? : String
+  lang? : String,
 ) -> @respo_node.RespoNode[T] {
-  let highliter = highliter.or(fn(content, _) -> String { content })
-  let highlighted = highliter(content, lang.or("text"))
-  return div(class_list=[style_snippet, class_name.or("")], [
+  let highliter = highliter.unwrap_or(fn(content, _) -> String { content })
+  let highlighted = highliter(content, lang.unwrap_or("text"))
+  return div(class_list=[style_snippet, class_name.unwrap_or("")], [
     pre(class_name=style_code_block, children=[code(inner_text=highlighted)]),
   ])
 }
@@ -140,9 +139,9 @@ fn[T] comp_link(chunk : String) -> @respo_node.RespoNode[T] {
 ///|
 pub fn[T] comp_md(
   text : String,
-  class_name? : String
+  class_name? : String,
 ) -> @respo_node.RespoNode[T] {
-  div(class_name=class_name.or(""), render_inline(text))
+  div(class_name=class_name.unwrap_or(""), render_inline(text))
 }
 
 ///|
@@ -150,12 +149,12 @@ pub fn[T] comp_md_block(
   text : String,
   class_name? : String,
   style? : @respo_node.RespoStyle,
-  highlighter~ : (String, String) -> String = fn(x, _) -> String { x }
+  highlighter~ : (String, String) -> String = fn(x, _) -> String { x },
 ) -> @respo_node.RespoNode[T] {
   let blocks = split_block(text)
   return div(
-    class_list=[class_name.or(""), "md-block"],
-    style=style.or(respo_style()),
+    class_list=[class_name.unwrap_or(""), "md-block"],
+    style=style.unwrap_or(respo_style()),
     blocks
     .iter()
     .map(fn(block) {
@@ -163,7 +162,7 @@ pub fn[T] comp_md_block(
         Text(lines) => comp_text_block(lines.to_array())
         Code(lines) => comp_code_block(lines.to_array(), highlighter~)
         Table(lines) => comp_table_block(lines.to_array())
-        _ => div([block.to_string() |> text_node])
+        Empty => div([])
       }
     })
     .collect(),
@@ -172,7 +171,7 @@ pub fn[T] comp_md_block(
 
 ///|
 fn[T] comp_table_block(
-  lines : Array[Array[String]]
+  lines : Array[Array[String]],
 ) -> @respo_node.RespoNode[T] {
   let header_line = lines[0]
   let mark_line = lines[1]
