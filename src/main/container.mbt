@@ -1,18 +1,11 @@
 ///|
-typealias @respo.RespoStatesTree
+using @respo {type RespoStatesTree}
 
 ///|
-fnalias @markdown.(comp_md_block, comp_md)
+using @markdown {comp_md_block, comp_md}
 
 ///|
-fnalias @respo_node.(
-  input,
-  space,
-  textarea,
-  a,
-  // text_node,
-  img
-)
+using @respo_node {input, space, textarea, a, img}
 
 ///|
 let ui_row_middle = @respo.ui_row_middle

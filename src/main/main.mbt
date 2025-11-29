@@ -2,7 +2,10 @@
 let ui_global = @respo.ui_global
 
 ///|
-fnalias @respo_node.(div, respo_style)
+using @respo_node {div}
+
+///|
+using @css {respo_style}
 
 ///|
 let app_store_key : String = "mbt-workflow"
@@ -27,6 +30,7 @@ fn main {
   let mount_target = window
     .document()
     .query_selector(".app")
+    .unwrap()
     .reinterpret_as_node()
   let app : @respo.RespoApp[Store] = {
     store: Ref::new(@respo.try_load_storage(app_store_key)),
