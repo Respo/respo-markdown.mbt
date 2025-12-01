@@ -159,7 +159,7 @@ fn split_line_iter(
       return acc
     }
   }
-  let cursor = line[0]
+  let cursor = line.get_char(0).unwrap()
   let left = line.substring(start=1).to_string()
   // println("cursor: \{cursor} .. mode: \{mode} .. line: \{line}")
   match mode {
@@ -251,7 +251,7 @@ fn split_table_content(cursor : String) -> Array[String] {
   cursor
   .substring(start=1, end=cursor.length() - 1)
   .split("|")
-  .map(fn(x) { x.trim(" ").to_string() })
+  .map(fn(x) { x.trim(chars=" ").to_string() })
   .to_array()
 }
 
