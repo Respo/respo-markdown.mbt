@@ -2,6 +2,10 @@
 
 > also checks https://github.com/Respo/respo-markdown.calcit
 
+```bash
+moon add tiye/respo-markdown
+```
+
 ````moonbit
 @markdown.comp_md("this is a `demo`")
 @markdown.comp_md("this is a `demo`", class_name=class_name)
