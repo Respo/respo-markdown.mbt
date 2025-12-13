@@ -41,7 +41,8 @@ fn main {
   // @dom_ffi.log("store: " + app.store.val.to_json().stringify(indent=2))
   app.render_loop(fn() { view(app.store.val) }, fn(op) {
     @dom_ffi.log("Action: " + op.to_string())
-    app.store.val.update(op)
+    // 使用不可变更新，将新 Store 赋值给 Ref
+    app.store.val = app.store.val.update(op)
   })
   let dev_mode = @dom_ffi.new_url_search_params(window.location().search()).get(
     "mode",
