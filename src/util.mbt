@@ -57,7 +57,11 @@ fn split_block_iter(
         split_block_iter(
           left,
           acc,
-          Code(@immut/array.from_array([cursor.substring(start=3).to_string()])),
+          Code(
+            @immut/array.from_array([
+              cursor.unsafe_substring(start=3, end=cursor.length()),
+            ]),
+          ),
         )
       } else if is_table_line(cursor) {
         if cursor != "" {
@@ -160,7 +164,7 @@ fn split_line_iter(
     }
   }
   let cursor = line.get_char(0).unwrap()
-  let left = line.substring(start=1).to_string()
+  let left = line.unsafe_substring(start=1, end=line.length())
   // println("cursor: \{cursor} .. mode: \{mode} .. line: \{line}")
   match mode {
     Text(buffer) =>
@@ -211,12 +215,15 @@ fn split_line_iter(
           if left == "" {
             split_line_iter(acc, left, Text(buffer + "*"))
           } else {
-            let next_left = left.substring(start=1)
+            let next_left = left.unsafe_substring(start=1, end=left.length())
             if left.has_prefix("*") {
               if match_string_pattern(next_left, peek_emphasis) is Some(matched) {
                 println("emphasis: \{matched}")
                 let emphasis = matched.selects[0]
-                let rest_line = next_left.substring(start=emphasis.length() + 2)
+                let rest_line = next_left.unsafe_substring(
+                  start=emphasis.length() + 2,
+                  end=next_left.length(),
+                )
                 acc.push(mode)
                 acc.push(Emphasis(emphasis))
                 split_line_iter(acc, rest_line, Text(""))
@@ -225,7 +232,10 @@ fn split_line_iter(
               }
             } else if match_string_pattern(left, peek_italic) is Some(matched) {
               let italic = matched.selects[0]
-              let rest_line = next_left.substring(start=italic.length())
+              let rest_line = next_left.unsafe_substring(
+                start=italic.length(),
+                end=next_left.length(),
+              )
               acc.push(mode)
               acc.push(Italic(italic))
               split_line_iter(acc, rest_line, Text(""))
@@ -249,7 +259,7 @@ fn split_line_iter(
 ///|
 fn split_table_content(cursor : String) -> Array[String] {
   cursor
-  .substring(start=1, end=cursor.length() - 1)
+  .unsafe_substring(start=1, end=cursor.length() - 1)
   .split("|")
   .map(fn(x) { x.trim(chars=" ").to_string() })
   .to_array()

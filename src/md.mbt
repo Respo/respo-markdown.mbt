@@ -71,7 +71,7 @@ let style_snippet : String = static_style([
 ///|
 fn[T] comp_image(chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.unsafe_substring(start=2, end=chunk.length() - 1)
-  let xs = useful.split("](").map(@string.View::to_string).collect()
+  let xs = useful.split("](").map(StringView::to_string).collect()
   if xs is [content, url, ..] {
     img(class_name=style_image, src=url, alt=content)
   } else {
@@ -123,7 +123,7 @@ fn[T] comp_line(line : String) -> @respo_node.RespoNode[T] {
 ///|
 fn[T] comp_link(chunk : String) -> @respo_node.RespoNode[T] {
   let useful = chunk.unsafe_substring(start=1, end=chunk.length() - 1)
-  let xs = useful.split("](").map(@string.View::to_string).collect()
+  let xs = useful.split("](").map(StringView::to_string).collect()
   if xs is [content, url] {
     span(class_name=style_default_link, [
       if content.has_prefix("`") && content.has_suffix("`") {

@@ -1,8 +1,9 @@
 ///|
+/// Store is immutable - all updates return new Store instances
 struct Store {
   tasks : Array[Task]
   states : @respo.RespoStatesTree
-} derive(ToJson, @json.FromJson)
+} derive(ToJson, @json.FromJson, Eq)
 
 ///|
 impl Default for Store with default() -> Store {
@@ -50,9 +51,9 @@ fn Store::get_states(self : Store) -> @respo.RespoStatesTree {
 }
 
 ///|
-/// TODO mutation might break memoization infuture
-fn Store::update(self : Store, op : ActionOp) -> Unit {
+/// Immutable update: returns a new Store with the action applied
+fn Store::update(self : Store, op : ActionOp) -> Store {
   match op {
-    StatesChange(states) => self.states.set_in_mut(states)
+    StatesChange(change) => { ..self, states: self.states.set_in(change) }
   }
 }

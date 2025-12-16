@@ -35,8 +35,7 @@ struct ContainerState {
 fn[Op : @respo_node.RespoAction] comp_container(
   states : RespoStatesTree,
 ) -> @respo_node.RespoNode[Op] {
-  let cursor = states.path()
-  let state = (states.cast_branch() : ContainerState)
+  let ((state : ContainerState), cursor) = states.local_pair()
   div(
     class_name=ui_global,
     style=respo_style(
