@@ -27,6 +27,7 @@ let code_fonts = @respo.code_fonts
 ///|
 fn[T] comp_code_block(
   lines : Array[String],
+  indent? : Int = 0,
   highlighter? : (String, String) -> String = fn(x, _) -> String { x },
 ) -> @respo_node.RespoNode[T] {
   let lang = lines[0]
@@ -35,6 +36,7 @@ fn[T] comp_code_block(
     content,
     class_name=style_code_block,
     highliter=highlighter,
+    indent~,
     lang~,
   )
 }
@@ -44,13 +46,16 @@ fn[T] comp_snippet(
   content : String,
   class_name? : String,
   highliter? : (String, String) -> String,
+  indent? : Int = 0,
   lang? : String,
 ) -> @respo_node.RespoNode[T] {
   let highliter = highliter.unwrap_or(fn(content, _) -> String { content })
   let highlighted = highliter(content, lang.unwrap_or("text"))
-  return div(class_list=[style_snippet, class_name.unwrap_or("")], [
-    pre(class_name=style_code_block, children=[code(inner_text=highlighted)]),
-  ])
+  return div(
+    class_list=[style_snippet, class_name.unwrap_or("")],
+    style=respo_style(margin_left=Px(Float::from_int(indent) * 8.0)),
+    [pre(class_name=style_code_block, children=[code(inner_text=highlighted)])],
+  )
 }
 
 ///|
@@ -174,7 +179,8 @@ pub fn[T] comp_md_block(
     .map(fn(block) {
       match block {
         @md_util.Text(lines) => comp_text_block(lines.to_array())
-        @md_util.Code(lines) => comp_code_block(lines.to_array(), highlighter~)
+        @md_util.Code(indent, lines) =>
+          comp_code_block(lines.to_array(), indent~, highlighter~)
         @md_util.Table(lines) => comp_table_block(lines.to_array())
         @md_util.Empty => div([])
       }

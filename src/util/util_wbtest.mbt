@@ -156,7 +156,8 @@ test "split_block: simple text" {
 test "split_block: code block" {
   let result = split_block("```js\nconsole.log('hi')\n```")
   inspect(result.length(), content="1")
-  guard result[0] is Code(lines) else { fail("expected Code block") }
+  guard result[0] is Code(indent, lines) else { fail("expected Code block") }
+  inspect(indent, content="0")
   inspect(lines.length(), content="2")
   inspect(lines[0], content="js")
   inspect(lines[1], content="console.log('hi')")
@@ -167,7 +168,7 @@ test "split_block: text and code" {
   let result = split_block("Some text\n\n```python\nprint('hi')\n```")
   inspect(result.length(), content="2")
   guard result[0] is Text(_) else { fail("expected Text block") }
-  guard result[1] is Code(_) else { fail("expected Code block") }
+  guard result[1] is Code(_, _) else { fail("expected Code block") }
 }
 
 ///|
@@ -233,7 +234,8 @@ test "split_line: trailing asterisk" {
 test "split_block: code block without language" {
   let result = split_block("```\ncode here\n```")
   inspect(result.length(), content="1")
-  guard result[0] is Code(lines) else { fail("expected Code block") }
+  guard result[0] is Code(indent, lines) else { fail("expected Code block") }
+  inspect(indent, content="0")
   inspect(lines[0], content="")
   inspect(lines[1], content="code here")
 }
@@ -252,4 +254,81 @@ test "split_line: bracket not link" {
   inspect(result.length(), content="1")
   guard result[0] is Text(t) else { fail("expected Text") }
   inspect(t, content="array[0] = 1")
+}
+
+///|
+test "split_block: indented code block" {
+  let text = "Some text\n\n    ```moonbit\n    fn main() {\n      println(\"hello\")\n    }\n    ```\n"
+  let result = split_block(text)
+  inspect(result.length(), content="2")
+  guard result[0] is Text(_) else { fail("expected Text block") }
+  guard result[1] is Code(indent, lines) else { fail("expected Code block") }
+  inspect(indent, content="4")
+  inspect(lines[0], content="moonbit")
+  inspect(lines[1], content="fn main() {")
+  inspect(lines[2], content="  println(\"hello\")")
+  inspect(lines[3], content="}")
+}
+
+///|
+test "split_block: indented code block with list" {
+  let text = "*   **Item**: Description\n\n    ```moonbit\n    let x = 1\n    ```\n"
+  let result = split_block(text)
+  inspect(result.length(), content="2")
+  guard result[0] is Text(_) else { fail("expected Text block") }
+  guard result[1] is Code(indent, lines) else { fail("expected Code block") }
+  inspect(indent, content="4")
+  inspect(lines[0], content="moonbit")
+  inspect(lines[1], content="let x = 1")
+}
+
+///|
+test "split_block: mixed indent code blocks" {
+  let text = "```js\ncode1\n```\n\n    ```python\n    code2\n    ```"
+  let result = split_block(text)
+  inspect(result.length(), content="2")
+  guard result[0] is Code(indent1, lines1) else {
+    fail("expected Code block 1")
+  }
+  inspect(indent1, content="0")
+  inspect(lines1[0], content="js")
+  inspect(lines1[1], content="code1")
+  guard result[1] is Code(indent2, lines2) else {
+    fail("expected Code block 2")
+  }
+  inspect(indent2, content="4")
+  inspect(lines2[0], content="python")
+  inspect(lines2[1], content="code2")
+}
+
+///|
+test "parse_code_fence: no indent" {
+  guard parse_code_fence("```moonbit") is Some((indent, lang)) else {
+    fail("expected Some")
+  }
+  inspect(indent, content="0")
+  inspect(lang, content="moonbit")
+}
+
+///|
+test "parse_code_fence: with indent" {
+  guard parse_code_fence("    ```python") is Some((indent, lang)) else {
+    fail("expected Some")
+  }
+  inspect(indent, content="4")
+  inspect(lang, content="python")
+}
+
+///|
+test "parse_code_fence: not a fence" {
+  inspect(parse_code_fence("some text") is None, content="true")
+  inspect(parse_code_fence("  not a fence") is None, content="true")
+}
+
+///|
+test "remove_indent: basic" {
+  inspect(remove_indent("    hello", 4), content="hello")
+  inspect(remove_indent("    hello", 2), content="  hello")
+  inspect(remove_indent("hello", 4), content="hello")
+  inspect(remove_indent("  hello", 4), content="hello")
 }

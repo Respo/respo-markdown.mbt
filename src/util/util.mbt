@@ -88,11 +88,42 @@ let peek_link : JsRegex = JsRegex::js_regex_create(
   "^\\[[^\\]]+\\]\\([^\\)]+\\)", "",
 )
 
+///| Check if line contains a code fence (```) with optional leading whitespace
+
+///|
+/// Returns Some((indent, lang)) if found, None otherwise
+fn parse_code_fence(line : String) -> (Int, String)? {
+  let trimmed = line.trim_start(chars=" ").to_string()
+  if trimmed.has_prefix("```") {
+    let indent = line.length() - trimmed.length()
+    let lang = trimmed.unsafe_substring(start=3, end=trimmed.length())
+    Some((indent, lang))
+  } else {
+    None
+  }
+}
+
+///|
+/// Remove leading spaces from a line up to the specified indent level
+fn remove_indent(line : String, indent : Int) -> String {
+  let mut count = 0
+  let mut start_idx = 0
+  for i = 0; i < line.length() && count < indent; i = i + 1 {
+    if line.get_char(i) == Some(' ') {
+      count = count + 1
+      start_idx = i + 1
+    } else {
+      break
+    }
+  }
+  line.unsafe_substring(start=start_idx, end=line.length())
+}
+
 ///|
 pub enum Block {
   Empty
   Text(@immut/array.T[String])
-  Code(@immut/array.T[String])
+  Code(Int, @immut/array.T[String]) // (indent, lines)
   Table(@immut/array.T[Array[String]])
 }
 
@@ -102,6 +133,7 @@ pub fn split_block(text : String) -> Array[Block] {
     text.split("\n").map(fn(x) -> String { x.to_string() }).to_array(),
     [],
     Empty,
+    0, // code_indent: track the indentation level of code block
   )
 }
 
@@ -110,6 +142,7 @@ fn split_block_iter(
   lines : Array[String],
   acc : Array[Block],
   buffer : Block,
+  code_indent : Int,
 ) -> Array[Block] {
   if lines.is_empty() {
     if buffer is Empty {
@@ -124,16 +157,13 @@ fn split_block_iter(
   match buffer {
     Empty =>
       if cursor == "" {
-        split_block_iter(left, acc, Empty)
-      } else if cursor.has_prefix("```") {
+        split_block_iter(left, acc, Empty, 0)
+      } else if parse_code_fence(cursor) is Some((indent, lang)) {
         split_block_iter(
           left,
           acc,
-          Code(
-            @immut/array.from_array([
-              cursor.unsafe_substring(start=3, end=cursor.length()),
-            ]),
-          ),
+          Code(indent, @immut/array.from_array([lang])),
+          indent,
         )
       } else if is_table_line(cursor) {
         if cursor != "" {
@@ -143,21 +173,27 @@ fn split_block_iter(
           left,
           acc,
           Table(@immut/array.from_array([split_table_content(cursor)])),
+          0,
         )
       } else {
-        split_block_iter(left, acc, Text(@immut/array.from_array([cursor])))
+        split_block_iter(left, acc, Text(@immut/array.from_array([cursor])), 0)
       }
     Text(buffer) =>
       if cursor == "" {
         if not(buffer.is_empty()) {
           acc.push(Text(buffer))
         }
-        split_block_iter(left, acc, Empty)
-      } else if cursor.has_prefix("```") {
+        split_block_iter(left, acc, Empty, 0)
+      } else if parse_code_fence(cursor) is Some((indent, lang)) {
         if not(buffer.is_empty()) {
           acc.push(Text(buffer))
         }
-        split_block_iter(left, acc, Code(buffer))
+        split_block_iter(
+          left,
+          acc,
+          Code(indent, @immut/array.from_array([lang])),
+          indent,
+        )
       } else if is_table_line(cursor) {
         if not(buffer.is_empty()) {
           acc.push(Text(buffer))
@@ -166,16 +202,25 @@ fn split_block_iter(
           left,
           acc,
           Table(@immut/array.from_array([split_table_content(cursor)])),
+          0,
         )
       } else {
-        split_block_iter(left, acc, Text(buffer.push(cursor)))
+        split_block_iter(left, acc, Text(buffer.push(cursor)), 0)
       }
-    Code(buffer) =>
-      if cursor.has_prefix("```") {
-        acc.push(Code(buffer))
-        split_block_iter(left, acc, Empty)
+    Code(block_indent, buffer) =>
+      // Check for closing fence with same or less indentation
+      if parse_code_fence(cursor) is Some((indent, _)) && indent <= code_indent {
+        acc.push(Code(block_indent, buffer))
+        split_block_iter(left, acc, Empty, 0)
       } else {
-        split_block_iter(left, acc, Code(buffer.push(cursor)))
+        // Remove the code block's indentation from content lines
+        let content = remove_indent(cursor, code_indent)
+        split_block_iter(
+          left,
+          acc,
+          Code(block_indent, buffer.push(content)),
+          code_indent,
+        )
       }
     Table(buffer) =>
       if is_table_line(cursor) {
@@ -183,10 +228,11 @@ fn split_block_iter(
           left,
           acc,
           Table(buffer.push(split_table_content(cursor))),
+          0,
         )
       } else {
         acc.push(Table(buffer))
-        split_block_iter(left, acc, Empty)
+        split_block_iter(left, acc, Empty, 0)
       }
   }
 }
