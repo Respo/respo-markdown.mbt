@@ -1,6 +1,6 @@
 {
   "name": "tiye/respo-markdown",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "deps": {
     "tiye/respo": "0.2.4",
     "tiye/dom-ffi": "0.2.3",

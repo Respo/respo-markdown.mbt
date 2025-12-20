@@ -96,6 +96,10 @@ fn[T] comp_line(line : String) -> @respo_node.RespoNode[T] {
     h3(render_inline(line.unsafe_substring(start=4, end=line.length())))
   } else if line.has_prefix("#### ") {
     h4(render_inline(line.unsafe_substring(start=5, end=line.length())))
+  } else if line == "---" || line == "***" || line == "___" {
+    let attrs = {}
+    attrs.set("class", style_hr)
+    create_element("hr", attrs~, event={}, style=respo_style(), [])
   } else if line.has_prefix("> ") {
     blockquote(
       class_name=style_blockquote,
@@ -363,6 +367,19 @@ let style_line_list : String = static_style([
     ),
   ),
   ("&:hover::marker", respo_style(color=Hsl(0, 0, 50), content="'● '")),
+])
+
+///|
+let style_hr : String = static_style([
+  (
+    "&",
+    respo_style(
+      border=CssBorder(0, Solid, Hsl(220, 6, 94)),
+      margin="24px 40px" |> Custom,
+    )
+    .add("border-top-width", "1px")
+    .add("height", "0"),
+  ),
 ])
 
 ///|
