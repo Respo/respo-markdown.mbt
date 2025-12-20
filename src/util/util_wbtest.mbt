@@ -174,7 +174,9 @@ test "split_block: text and code" {
 ///|
 test "split_block: table" {
   let result = split_block("| a | b |\n| 1 | 2 |")
-  inspect(result.length(), content="2")
+  inspect(result.length(), content="1")
+  guard result[0] is Table(lines) else { fail("expected Table block") }
+  inspect(lines.length(), content="2")
 }
 
 ///|
@@ -331,4 +333,40 @@ test "remove_indent: basic" {
   inspect(remove_indent("    hello", 2), content="  hello")
   inspect(remove_indent("hello", 4), content="hello")
   inspect(remove_indent("  hello", 4), content="hello")
+}
+
+///|
+test "split_block: table with separator line" {
+  let text = "| 特性 | MoonBit | Rust |\n| :--- | :--- | :--- |\n| A | B | C |"
+  let result = split_block(text)
+  inspect(result.length(), content="1")
+  guard result[0] is Table(lines) else { fail("expected Table block") }
+  inspect(lines.length(), content="3")
+  // header line
+  inspect(lines[0][0], content="特性")
+  // separator line
+  inspect(lines[1][0], content=":---")
+  // data line
+  inspect(lines[2][0], content="A")
+}
+
+///|
+test "is_separator_line: valid" {
+  inspect(is_separator_line(["---", "---", "---"]), content="true")
+  inspect(is_separator_line([":---", ":---", ":---"]), content="true")
+  inspect(is_separator_line(["---:", "---:", "---:"]), content="true")
+  inspect(is_separator_line([":---:", ":---:", ":---:"]), content="true")
+  inspect(
+    is_separator_line([
+      ":---------------", ":----------------------------------------------------------",
+    ]),
+    content="true",
+  )
+}
+
+///|
+test "is_separator_line: invalid" {
+  inspect(is_separator_line(["abc", "def"]), content="false")
+  inspect(is_separator_line(["---", "abc"]), content="false")
+  inspect(is_separator_line([]), content="false")
 }

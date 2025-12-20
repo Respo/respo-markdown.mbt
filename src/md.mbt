@@ -194,17 +194,35 @@ fn[T] comp_table_block(
   lines : Array[Array[String]],
 ) -> @respo_node.RespoNode[T] {
   let header_line = lines[0]
-  let mark_line = lines[1]
-  let body_lines = if mark_line[0].has_prefix(":") ||
-    mark_line[0].has_suffix("-") {
+  // Check if second line is a separator line (e.g., | --- | :--- |)
+  let body_lines = if lines.length() > 1 && @md_util.is_separator_line(lines[1]) {
     lines[2:]
   } else {
     lines[1:]
   }
-  let attrs = {}
-  attrs.set("class-name", style_md_table)
-  create_element("table", attrs~, event={}, style=respo_style(), [
-    create_element("thead", attrs={}, event={}, style=respo_style(), [
+  let table_style = respo_style(margin="16px 0" |> Custom)
+    .add("empty-cells", "show")
+    .add("border-collapse", "collapse")
+    .add("width", "100%")
+  let thead_style = respo_style(background_color=Hsl(220, 10, 97)).add(
+    "font-weight", "600",
+  )
+  let th_style = respo_style(
+    border=CssBorder(1, Solid, Hsl(220, 10, 90)),
+    padding="10px 14px" |> Custom,
+    text_align=Left,
+    background_color=Hsl(220, 10, 97),
+  ).add("border-bottom-width", "1px")
+  let td_style = respo_style(
+      padding="8px 14px" |> Custom,
+      text_align=Left,
+      vertical_align=Top,
+    )
+    .add("border-left", "1px solid hsl(220, 10%, 90%)")
+    .add("border-right", "1px solid hsl(220, 10%, 90%)")
+    .add("border-bottom", "1px solid hsl(220, 10%, 90%)")
+  create_element("table", style=table_style, [
+    create_element("thead", style=thead_style, [
       create_element(
         "tr",
         header_line
@@ -214,7 +232,7 @@ fn[T] comp_table_block(
             "th",
             attrs={},
             event={},
-            style=respo_style(),
+            style=th_style,
             render_inline(x.to_string()),
           )
         })
@@ -233,7 +251,9 @@ fn[T] comp_table_block(
           "tr",
           line
           .iter()
-          .map(fn(x) { create_element("td", render_inline(x.to_string())) })
+          .map(fn(x) {
+            create_element("td", style=td_style, render_inline(x.to_string()))
+          })
           .collect(),
         )
       })
@@ -343,35 +363,6 @@ let style_line_list : String = static_style([
     ),
   ),
   ("&:hover::marker", respo_style(color=Hsl(0, 0, 50), content="'● '")),
-])
-
-///|
-let style_md_table : String = static_style([
-  (
-    "&",
-    respo_style(border=CssBorder(1, Solid, Hsl(0, 0, 90)))
-    .add("empty-cells", "show")
-    .add("border-collapse", "collapse"),
-  ),
-  ("& thead", respo_style(background_color=Hsl(0, 0, 96))),
-  (
-    "& tr",
-    respo_style(
-      border=CssBorder(0, Solid, Hsl(0, 0, 94)),
-      border_width="1px 0 0 0" |> Custom,
-    ),
-  ),
-  (
-    "& td, & th",
-    respo_style(
-      border=CssBorder(0, Solid, Hsl(0, 0, 94)),
-      border_width="0 0 0 1px" |> Custom,
-      padding="0.5em 1em" |> Custom,
-      line_height=1.5 |> Em,
-      text_align=Left,
-      vertical_align=Middle,
-    ),
-  ),
 ])
 
 ///|

@@ -166,9 +166,6 @@ fn split_block_iter(
           indent,
         )
       } else if is_table_line(cursor) {
-        if cursor != "" {
-          acc.push(Text(@immut/array.from_array([cursor])))
-        }
         split_block_iter(
           left,
           acc,
@@ -386,4 +383,24 @@ pub fn split_table_content(cursor : String) -> Array[String] {
 ///|
 pub fn is_table_line(cursor : String) -> Bool {
   cursor.has_prefix("|") && cursor.has_suffix("|")
+}
+
+///|
+/// Check if a table row is a separator line (e.g., | --- | :--- | ---: |)
+pub fn is_separator_line(cells : Array[String]) -> Bool {
+  if cells.length() == 0 {
+    return false
+  }
+  for cell in cells {
+    let trimmed = cell.trim(chars=" :")
+    if trimmed.length() == 0 {
+      return false
+    }
+    for c in trimmed {
+      if c != '-' {
+        return false
+      }
+    }
+  }
+  true
 }

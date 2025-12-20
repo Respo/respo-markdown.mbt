@@ -14,3 +14,8 @@ fn split_block(text : String) -> Array[@md_util.Block] {
 fn split_line(line : String) -> Array[@md_util.LineChunk] {
   @md_util.split_line(line)
 }
+
+///|
+fn is_separator_line(cells : Array[String]) -> Bool {
+  @md_util.is_separator_line(cells)
+}
