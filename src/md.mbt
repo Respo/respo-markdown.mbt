@@ -100,7 +100,7 @@ fn[T] comp_line(line : String) -> @respo_node.RespoNode[T] {
     let content = line.trim_start(chars=" ").to_string()
     let space_size = line.length() - content.length()
     let spaces = line.unsafe_substring(start=0, end=space_size)
-    div(class_name=style_indent, [
+    div([
       span(inner_text=spaces, class_name=style_indent, []),
       comp_line(content),
     ])
@@ -173,10 +173,10 @@ pub fn[T] comp_md_block(
     .iter()
     .map(fn(block) {
       match block {
-        Text(lines) => comp_text_block(lines.to_array())
-        Code(lines) => comp_code_block(lines.to_array(), highlighter~)
-        Table(lines) => comp_table_block(lines.to_array())
-        Empty => div([])
+        @md_util.Text(lines) => comp_text_block(lines.to_array())
+        @md_util.Code(lines) => comp_code_block(lines.to_array(), highlighter~)
+        @md_util.Table(lines) => comp_table_block(lines.to_array())
+        @md_util.Empty => div([])
       }
     })
     .collect(),
@@ -251,17 +251,17 @@ fn[T] render_inline(text : String) -> Array[@respo_node.RespoNode[T]] {
   let lines = split_line(text)
   for chunk in lines {
     match chunk {
-      Code(content) => {
+      @md_util.Code(content) => {
         println("inline code: " + content)
         els.push(code(class_name=style_inline_code, inner_text=content))
       }
-      Url(content) =>
+      @md_util.Url(content) =>
         els.push(a(href=content, inner_text=content, target=Blank))
-      Link(content) => els.push(comp_link(content))
-      Image(content) => els.push(comp_image(content))
-      Text(content) => els.push(span(inner_text=content, []))
-      Emphasis(content) => els.push(b(render_inline(content)))
-      Italic(content) => els.push(i(inner_text=content, []))
+      @md_util.Link(content) => els.push(comp_link(content))
+      @md_util.Image(content) => els.push(comp_image(content))
+      @md_util.Text(content) => els.push(span(inner_text=content, []))
+      @md_util.Emphasis(content) => els.push(b(render_inline(content)))
+      @md_util.Italic(content) => els.push(i(inner_text=content, []))
     }
   }
   els
