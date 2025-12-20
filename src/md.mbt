@@ -27,6 +27,7 @@ let code_fonts = @respo.code_fonts
 ///|
 fn[T] comp_code_block(
   lines : Array[String],
+  indent? : Int = 0,
   highlighter? : (String, String) -> String = fn(x, _) -> String { x },
 ) -> @respo_node.RespoNode[T] {
   let lang = lines[0]
@@ -35,6 +36,7 @@ fn[T] comp_code_block(
     content,
     class_name=style_code_block,
     highliter=highlighter,
+    indent~,
     lang~,
   )
 }
@@ -44,13 +46,16 @@ fn[T] comp_snippet(
   content : String,
   class_name? : String,
   highliter? : (String, String) -> String,
+  indent? : Int = 0,
   lang? : String,
 ) -> @respo_node.RespoNode[T] {
   let highliter = highliter.unwrap_or(fn(content, _) -> String { content })
   let highlighted = highliter(content, lang.unwrap_or("text"))
-  return div(class_list=[style_snippet, class_name.unwrap_or("")], [
-    pre(class_name=style_code_block, children=[code(inner_text=highlighted)]),
-  ])
+  return div(
+    class_list=[style_snippet, class_name.unwrap_or("")],
+    style=respo_style(margin_left=Px(Float::from_int(indent) * 8.0)),
+    [pre(class_name=style_code_block, children=[code(inner_text=highlighted)])],
+  )
 }
 
 ///|
@@ -91,6 +96,10 @@ fn[T] comp_line(line : String) -> @respo_node.RespoNode[T] {
     h3(render_inline(line.unsafe_substring(start=4, end=line.length())))
   } else if line.has_prefix("#### ") {
     h4(render_inline(line.unsafe_substring(start=5, end=line.length())))
+  } else if line == "---" || line == "***" || line == "___" {
+    let attrs = {}
+    attrs.set("class", style_hr)
+    create_element("hr", attrs~, event={}, style=respo_style(), [])
   } else if line.has_prefix("> ") {
     blockquote(
       class_name=style_blockquote,
@@ -100,7 +109,7 @@ fn[T] comp_line(line : String) -> @respo_node.RespoNode[T] {
     let content = line.trim_start(chars=" ").to_string()
     let space_size = line.length() - content.length()
     let spaces = line.unsafe_substring(start=0, end=space_size)
-    div(class_name=style_indent, [
+    div([
       span(inner_text=spaces, class_name=style_indent, []),
       comp_line(content),
     ])
@@ -173,10 +182,11 @@ pub fn[T] comp_md_block(
     .iter()
     .map(fn(block) {
       match block {
-        Text(lines) => comp_text_block(lines.to_array())
-        Code(lines) => comp_code_block(lines.to_array(), highlighter~)
-        Table(lines) => comp_table_block(lines.to_array())
-        Empty => div([])
+        @md_util.Text(lines) => comp_text_block(lines.to_array())
+        @md_util.Code(indent, lines) =>
+          comp_code_block(lines.to_array(), indent~, highlighter~)
+        @md_util.Table(lines) => comp_table_block(lines.to_array())
+        @md_util.Empty => div([])
       }
     })
     .collect(),
@@ -188,17 +198,35 @@ fn[T] comp_table_block(
   lines : Array[Array[String]],
 ) -> @respo_node.RespoNode[T] {
   let header_line = lines[0]
-  let mark_line = lines[1]
-  let body_lines = if mark_line[0].has_prefix(":") ||
-    mark_line[0].has_suffix("-") {
+  // Check if second line is a separator line (e.g., | --- | :--- |)
+  let body_lines = if lines.length() > 1 && @md_util.is_separator_line(lines[1]) {
     lines[2:]
   } else {
     lines[1:]
   }
-  let attrs = {}
-  attrs.set("class-name", style_md_table)
-  create_element("table", attrs~, event={}, style=respo_style(), [
-    create_element("thead", attrs={}, event={}, style=respo_style(), [
+  let table_style = respo_style(margin="16px 0" |> Custom)
+    .add("empty-cells", "show")
+    .add("border-collapse", "collapse")
+    .add("width", "100%")
+  let thead_style = respo_style(background_color=Hsl(220, 10, 97)).add(
+    "font-weight", "600",
+  )
+  let th_style = respo_style(
+    border=CssBorder(1, Solid, Hsl(220, 10, 90)),
+    padding="10px 14px" |> Custom,
+    text_align=Left,
+    background_color=Hsl(220, 10, 97),
+  ).add("border-bottom-width", "1px")
+  let td_style = respo_style(
+      padding="8px 14px" |> Custom,
+      text_align=Left,
+      vertical_align=Top,
+    )
+    .add("border-left", "1px solid hsl(220, 10%, 90%)")
+    .add("border-right", "1px solid hsl(220, 10%, 90%)")
+    .add("border-bottom", "1px solid hsl(220, 10%, 90%)")
+  create_element("table", style=table_style, [
+    create_element("thead", style=thead_style, [
       create_element(
         "tr",
         header_line
@@ -208,7 +236,7 @@ fn[T] comp_table_block(
             "th",
             attrs={},
             event={},
-            style=respo_style(),
+            style=th_style,
             render_inline(x.to_string()),
           )
         })
@@ -227,7 +255,9 @@ fn[T] comp_table_block(
           "tr",
           line
           .iter()
-          .map(fn(x) { create_element("td", render_inline(x.to_string())) })
+          .map(fn(x) {
+            create_element("td", style=td_style, render_inline(x.to_string()))
+          })
           .collect(),
         )
       })
@@ -251,17 +281,17 @@ fn[T] render_inline(text : String) -> Array[@respo_node.RespoNode[T]] {
   let lines = split_line(text)
   for chunk in lines {
     match chunk {
-      Code(content) => {
+      @md_util.Code(content) => {
         println("inline code: " + content)
         els.push(code(class_name=style_inline_code, inner_text=content))
       }
-      Url(content) =>
+      @md_util.Url(content) =>
         els.push(a(href=content, inner_text=content, target=Blank))
-      Link(content) => els.push(comp_link(content))
-      Image(content) => els.push(comp_image(content))
-      Text(content) => els.push(span(inner_text=content, []))
-      Emphasis(content) => els.push(b(render_inline(content)))
-      Italic(content) => els.push(i(inner_text=content, []))
+      @md_util.Link(content) => els.push(comp_link(content))
+      @md_util.Image(content) => els.push(comp_image(content))
+      @md_util.Text(content) => els.push(span(inner_text=content, []))
+      @md_util.Emphasis(content) => els.push(b(render_inline(content)))
+      @md_util.Italic(content) => els.push(i(inner_text=content, []))
     }
   }
   els
@@ -340,31 +370,15 @@ let style_line_list : String = static_style([
 ])
 
 ///|
-let style_md_table : String = static_style([
+let style_hr : String = static_style([
   (
     "&",
-    respo_style(border=CssBorder(1, Solid, Hsl(0, 0, 90)))
-    .add("empty-cells", "show")
-    .add("border-collapse", "collapse"),
-  ),
-  ("& thead", respo_style(background_color=Hsl(0, 0, 96))),
-  (
-    "& tr",
     respo_style(
-      border=CssBorder(0, Solid, Hsl(0, 0, 94)),
-      border_width="1px 0 0 0" |> Custom,
-    ),
-  ),
-  (
-    "& td, & th",
-    respo_style(
-      border=CssBorder(0, Solid, Hsl(0, 0, 94)),
-      border_width="0 0 0 1px" |> Custom,
-      padding="0.5em 1em" |> Custom,
-      line_height=1.5 |> Em,
-      text_align=Left,
-      vertical_align=Middle,
-    ),
+      border=CssBorder(0, Solid, Hsl(220, 6, 94)),
+      margin="24px 40px" |> Custom,
+    )
+    .add("border-top-width", "1px")
+    .add("height", "0"),
   ),
 ])
 
