@@ -15,6 +15,10 @@
     {
       "path": "tiye/respo_css",
       "alias": "css"
+    },
+    {
+      "path": "tiye/respo-markdown/util",
+      "alias": "md_util"
     }
   ]
 }
